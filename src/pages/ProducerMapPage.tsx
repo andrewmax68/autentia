@@ -61,6 +61,84 @@ const ProducerMapPage = () => {
           possibleNames: [businessName1, businessName2, businessName3]
         }));
 
+        // Check if this is the test business "terra-delle-marche"
+        if (slug === 'terra-delle-marche') {
+          console.log('Using test business data for terra-delle-marche');
+          
+          const testBusiness = {
+            id: '550e8400-e29b-41d4-a716-446655440000',
+            business_name: 'Terra delle Marche',
+            category: 'Alimentari',
+            logo_url: null
+          };
+          
+          setBusiness(testBusiness);
+          
+          // Create test stores with coordinates
+          const testStores: Store[] = [
+            {
+              id: 'test-store-1',
+              store_name: 'Negozio Centro Ancona',
+              brand: 'Terra delle Marche',
+              address: 'Via del Corso, 123',
+              city: 'Ancona',
+              province: 'AN',
+              latitude: 43.6158,
+              longitude: 13.5189,
+              phone: '071-123456',
+              email: 'ancona@terradellemarche.it',
+              website: 'https://terradellemarche.it',
+              services: ['Consegna a domicilio', 'Prodotti biologici'],
+              business_name: 'Terra delle Marche',
+              category: 'Alimentari'
+            },
+            {
+              id: 'test-store-2',
+              store_name: 'Punto Vendita Pesaro',
+              brand: 'Terra delle Marche',
+              address: 'Piazza del Popolo, 45',
+              city: 'Pesaro',
+              province: 'PU',
+              latitude: 43.9102,
+              longitude: 12.9137,
+              phone: '0721-987654',
+              email: 'pesaro@terradellemarche.it',
+              services: ['Degustazioni', 'Prodotti locali'],
+              business_name: 'Terra delle Marche',
+              category: 'Alimentari'
+            },
+            {
+              id: 'test-store-3',
+              store_name: 'Store Macerata',
+              brand: 'Terra delle Marche',
+              address: 'Via Garibaldi, 78',
+              city: 'Macerata',
+              province: 'MC',
+              latitude: 43.3003,
+              longitude: 13.4537,
+              phone: '0733-456789',
+              email: 'macerata@terradellemarche.it',
+              services: ['Prodotti tipici'],
+              business_name: 'Terra delle Marche',
+              category: 'Alimentari'
+            }
+          ];
+          
+          setStores(testStores);
+          setDebugInfo(prev => ({ 
+            ...prev, 
+            businessFound: true, 
+            businessData: testBusiness,
+            testMode: true,
+            testStores: testStores.length
+          }));
+          
+          setIsLoading(false);
+          return;
+        }
+
+        // Continue with normal database search for other slugs
+        
         // First, try to find ALL businesses to see what's available
         const { data: allBusinesses, error: allBusinessError } = await supabase
           .from('businesses')
