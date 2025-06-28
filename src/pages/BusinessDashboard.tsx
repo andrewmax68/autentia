@@ -1,7 +1,6 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MapPin, Store, Plus, LogOut, Edit, Trash2, ExternalLink, Share2 } from "lucide-react";
+import { MapPin, Store, Plus, LogOut, Edit, Trash2, ExternalLink, Share2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
