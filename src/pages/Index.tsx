@@ -7,14 +7,19 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 
 const Index = () => {
+  console.log("Index component is rendering");
+  
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("Search submitted:", searchQuery);
     if (searchQuery.trim()) {
       window.location.href = `/search?q=${encodeURIComponent(searchQuery)}`;
     }
   };
+
+  console.log("About to return JSX");
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-white">
