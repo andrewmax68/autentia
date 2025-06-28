@@ -40,7 +40,7 @@ const ProducerMapPage = () => {
       try {
         console.log('Fetching stores for slug:', slug);
         
-        // Converti slug in business name (rimuovi trattini e capitalizza)
+        // First try to get business info from businesses table
         const businessName = slug
           .split('-')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -48,42 +48,53 @@ const ProducerMapPage = () => {
 
         console.log('Looking for business name:', businessName);
 
-        const { data: storesData, error: storesError } = await supabase
-          .from('public_stores')
+        // Get business info first
+        const { data: businessData, error: businessError } = await supabase
+          .from('businesses')
           .select('*')
-          .ilike('business_name', `%${businessName}%`);
+          .ilike('business_name', `%${businessName}%`)
+          .limit(1)
+          .single();
 
-        if (storesError) {
-          console.error('Error fetching stores:', storesError);
-          throw storesError;
+        if (businessError && businessError.code !== 'PGRST116') {
+          console.error('Error fetching business:', businessError);
         }
 
-        console.log('Stores data:', storesData);
+        if (businessData) {
+          setBusiness(businessData);
+          
+          // Now get stores for this business
+          const { data: storesData, error: storesError } = await supabase
+            .from('stores')
+            .select('*')
+            .eq('business_id', businessData.id)
+            .eq('is_active', true);
 
-        if (!storesData || storesData.length === 0) {
-          // Prova a cercare anche per slug esatto
-          const { data: altStoresData, error: altStoresError } = await supabase
+          if (storesError) {
+            console.error('Error fetching stores:', storesError);
+            throw storesError;
+          }
+
+          console.log('Stores data:', storesData);
+          setStores(storesData?.filter(store => store.latitude && store.longitude) || []);
+        } else {
+          // Fallback: try to find stores using public_stores view
+          const { data: publicStoresData, error: publicStoresError } = await supabase
             .from('public_stores')
             .select('*')
-            .textSearch('fts', slug.replace(/-/g, ' '));
+            .ilike('business_name', `%${businessName}%`);
 
-          if (!altStoresError && altStoresData) {
-            setStores(altStoresData.filter(store => store.latitude && store.longitude) as Store[]);
-            if (altStoresData.length > 0) {
-              setBusiness({
-                business_name: altStoresData[0].business_name,
-                category: altStoresData[0].category,
-                logo_url: altStoresData[0].logo_url
-              });
-            }
+          if (publicStoresError) {
+            console.error('Error fetching public stores:', publicStoresError);
+            throw publicStoresError;
           }
-        } else {
-          setStores(storesData.filter(store => store.latitude && store.longitude) as Store[]);
-          if (storesData.length > 0) {
+
+          if (publicStoresData && publicStoresData.length > 0) {
+            setStores(publicStoresData.filter(store => store.latitude && store.longitude) as Store[]);
             setBusiness({
-              business_name: storesData[0].business_name,
-              category: storesData[0].category,
-              logo_url: storesData[0].logo_url
+              business_name: publicStoresData[0].business_name,
+              category: publicStoresData[0].category,
+              logo_url: publicStoresData[0].logo_url
             });
           }
         }
@@ -137,7 +148,7 @@ const ProducerMapPage = () => {
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              Non sono stati trovati punti vendita per questo produttore.
+              Non sono stati trovati punti vendita attivi per questo produttore.
             </p>
             <Button asChild>
               <Link to="/">Torna alla Home</Link>

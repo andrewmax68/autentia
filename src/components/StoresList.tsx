@@ -418,58 +418,6 @@ const StoresList = ({ businessId }: StoresListProps) => {
       </CardContent>
     </Card>
   );
-
-  const deleteStore = async (storeId: string, storeName: string) => {
-    if (!confirm(`Sei sicuro di voler eliminare "${storeName}"?`)) return;
-
-    try {
-      const { error } = await supabase
-        .from('stores')
-        .delete()
-        .eq('id', storeId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Successo",
-        description: "Punto vendita eliminato con successo",
-      });
-
-      await fetchStores();
-    } catch (error) {
-      console.error('Error deleting store:', error);
-      toast({
-        title: "Errore",
-        description: "Impossibile eliminare il punto vendita",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const toggleActive = async (storeId: string, currentStatus: boolean) => {
-    try {
-      const { error } = await supabase
-        .from('stores')
-        .update({ is_active: !currentStatus })
-        .eq('id', storeId);
-
-      if (error) throw error;
-
-      toast({
-        title: "Successo",
-        description: `Punto vendita ${!currentStatus ? 'attivato' : 'disattivato'} con successo`,
-      });
-
-      await fetchStores();
-    } catch (error) {
-      console.error('Error toggling store status:', error);
-      toast({
-        title: "Errore",
-        description: "Impossibile modificare lo stato del punto vendita",
-        variant: "destructive",
-      });
-    }
-  };
 };
 
 export default StoresList;
