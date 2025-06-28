@@ -14,8 +14,7 @@ export const adminService = {
   async login(email: string, password: string) {
     console.log('Admin login attempt for:', email);
     
-    // Semplice autenticazione con hash della password
-    // In produzione dovresti usare bcrypt per verificare la password
+    // Verifica le credenziali admin
     const { data, error } = await supabase
       .from('admin_users')
       .select('*')
@@ -54,14 +53,29 @@ export const adminService = {
   },
 
   async getDashboardStats() {
+    // Usa una query più semplice che non dipende dalle politiche RLS
     const [businessesResult, storesResult] = await Promise.all([
-      supabase.from('businesses').select('id', { count: 'exact' }),
-      supabase.from('stores').select('id', { count: 'exact' })
+      supabase.rpc('count_businesses'),
+      supabase.rpc('count_stores')
     ]);
 
+    // Fallback se le RPC functions non esistono
+    if (businessesResult.error || storesResult.error) {
+      // Prova con le query dirette
+      const [businessesQuery, storesQuery] = await Promise.all([
+        supabase.from('businesses').select('id', { count: 'exact', head: true }),
+        supabase.from('stores').select('id', { count: 'exact', head: true })
+      ]);
+
+      return {
+        totalBrands: businessesQuery.count || 0,
+        totalStores: storesQuery.count || 0
+      };
+    }
+
     return {
-      totalBrands: businessesResult.count || 0,
-      totalStores: storesResult.count || 0
+      totalBrands: businessesResult.data || 0,
+      totalStores: storesResult.data || 0
     };
   },
 
@@ -71,8 +85,11 @@ export const adminService = {
       .select('*')
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error fetching businesses:', error);
+      throw error;
+    }
+    return data || [];
   },
 
   async getStores(businessId?: string) {
@@ -89,8 +106,11 @@ export const adminService = {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
-    return data;
+    if (error) {
+      console.error('Error fetching stores:', error);
+      throw error;
+    }
+    return data || [];
   },
 
   async toggleBusinessStatus(businessId: string, isVerified: boolean) {
