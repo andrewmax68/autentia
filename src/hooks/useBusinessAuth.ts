@@ -1,23 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { User } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { businessService } from '@/services/businessService';
-
-interface Business {
-  id: string;
-  business_name: string;
-  owner_name: string;
-  email: string;
-  phone?: string;
-  category?: string;
-  region?: string;
-  description?: string;
-  website?: string;
-  primary_brand: string;
-  secondary_brands?: string[];
-  is_verified: boolean;
-}
+import { Business } from '@/types/business';
 
 export interface BusinessFormData {
   businessName: string;
@@ -36,83 +22,168 @@ export interface BusinessFormData {
   acceptTerms: boolean;
 }
 
+interface AuthResult {
+  success: boolean;
+  error?: any;
+}
+
 export const useBusinessAuth = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);  
   const [business, setBusiness] = useState<Business | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
-    // Crea un business di test con dati che esistono già nel database
-    const testBusiness: Business = {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      business_name: 'Terra delle Marche',
-      owner_name: 'Test Owner',
-      email: 'direzione@terradellemarche.it',
-      phone: '123456789',
-      category: 'Alimentari',
-      region: 'Marche',
-      description: 'Azienda di test per sviluppo',
-      website: 'https://terradellemarche.it',
-      primary_brand: 'Terra delle Marche',
-      secondary_brands: ['Brand Secondario'],
-      is_verified: true // Cambiato da false a true
+    console.log('useBusinessAuth - Setting up auth listener');
+    
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = authService.onAuthStateChange(
+      async (event, session) => {
+        console.log('useBusinessAuth - Auth state changed:', event, session?.user?.email);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Defer business data fetching with setTimeout
+        if (session?.user && event === 'SIGNED_IN') {
+          setTimeout(async () => {
+            await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
+          }, 0);
+        } else {
+          setBusiness(null);
+        }
+        
+        setIsInitializing(false);
+      }
+    );
+
+    // THEN check for existing session
+    authService.getSession().then(({ data: { session } }) => {
+      console.log('useBusinessAuth - Initial session check:', session?.user?.email);
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setTimeout(async () => {
+          await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
+        }, 0);
+      }
+      
+      setIsInitializing(false);
+    });
+
+    return () => {
+      console.log('useBusinessAuth - Cleaning up auth listener');
+      subscription.unsubscribe();
     };
-
-    setBusiness(testBusiness);
-    setIsAuthenticated(true);
-    setIsLoading(false);
-
-    // Simula un utente autenticato per bypassare RLS
-    const mockUser = {
-      id: '550e8400-e29b-41d4-a716-446655440000',
-      email: 'direzione@terradellemarche.it'
-    } as User;
-    setUser(mockUser);
-
   }, []);
 
-  const login = async (email: string, password: string) => {
-    setIsLoading(true);
+  const loadBusinessData = async (userId: string, userMetadata: any, userEmail: string | undefined) => {
     try {
-      console.log('Login forzato per test:', email);
-      setIsAuthenticated(true);
-      return { success: true };
+      console.log('useBusinessAuth - Loading business data for user:', userId);
+      
+      let businessData = await businessService.getBusinessByUserId(userId);
+      
+      if (!businessData && userMetadata && userEmail) {
+        console.log('useBusinessAuth - No business found, creating from metadata');
+        businessData = await businessService.createBusinessFromMetadata(userId, userMetadata, userEmail);
+      }
+
+      if (businessData) {
+        console.log('useBusinessAuth - Business data loaded:', businessData.business_name);
+        setBusiness(businessData);
+      } else {
+        console.log('useBusinessAuth - No business data found');
+        setBusiness(null);
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      console.error('useBusinessAuth - Error loading business data:', error);
+      setBusiness(null);
+    }
+  };
+
+  const signUp = async (formData: BusinessFormData): Promise<AuthResult> => {
+    setIsLoading(true);
+    
+    try {
+      console.log('useBusinessAuth - Starting signup for:', formData.email);
+      
+      const authData = await authService.signUp(formData);
+      
+      if (authData.user && !authData.user.email_confirmed_at) {
+        console.log('useBusinessAuth - Signup successful, email confirmation required');
+        return { 
+          success: true, 
+          error: { message: 'Ti abbiamo inviato un\'email di conferma. Controlla la tua casella di posta.' }
+        };
+      }
+
+      console.log('useBusinessAuth - Signup successful');
+      return { success: true };
+      
+    } catch (error: any) {
+      console.error('useBusinessAuth - Signup error:', error);
+      
+      let errorMessage = 'Errore durante la registrazione';
+      if (error.message?.includes('already registered')) {
+        errorMessage = 'Questa email è già registrata';
+      } else if (error.message?.includes('Password should be')) {
+        errorMessage = 'La password deve essere di almeno 6 caratteri';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return { success: false, error: { message: errorMessage } };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const login = async (email: string, password: string): Promise<AuthResult> => {
+    setIsLoading(true);
+    
+    try {
+      console.log('useBusinessAuth - Starting login for:', email);
+      
+      const data = await authService.login(email, password);
+      
+      if (data.user && !data.user.email_confirmed_at) {
+        console.log('useBusinessAuth - Email not confirmed');
+        return { 
+          success: false, 
+          error: { message: 'Per favore conferma la tua email prima di accedere' }
+        };
+      }
+
+      console.log('useBusinessAuth - Login successful');
+      return { success: true };
+      
+    } catch (error: any) {
+      console.error('useBusinessAuth - Login error:', error);
       return { success: false, error };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (formData: BusinessFormData) => {
-    setIsLoading(true);
-    try {
-      console.log('SignUp forzato per test:', formData.email);
-      setIsAuthenticated(true);
-      return { success: true };
-    } catch (error) {
-      console.error('SignUp error:', error);
-      return { success: false, error };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const logout = () => {
+  const logout = async (): Promise<void> => {
+    console.log('useBusinessAuth - Logging out');
+    await authService.logout();
     setUser(null);
+    setSession(null);
     setBusiness(null);
-    setIsAuthenticated(false);
   };
 
   return {
     user,
+    session,
     business,
     isLoading,
-    isAuthenticated,
-    login,
+    isInitializing,
     signUp,
+    login,
     logout
   };
 };
