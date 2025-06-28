@@ -206,7 +206,7 @@ const BrandSearch = () => {
                       parseFloat(store.longitude.toString())
                     ]}
                   >
-                    <Popup maxWidth={350} className="custom-popup">
+                    <Popup className="custom-popup">
                       <div className="p-3 min-w-[250px]">
                         <div className="flex items-center gap-3 mb-3">
                           {store.logo_url && (
@@ -265,7 +265,8 @@ const BrandSearch = () => {
         )}
       </div>
       
-      <style jsx>{`
+      <style>
+        {`
         .custom-popup .leaflet-popup-content {
           margin: 0;
         }
@@ -273,7 +274,8 @@ const BrandSearch = () => {
           border-radius: 8px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
