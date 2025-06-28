@@ -90,6 +90,7 @@ const BusinessDashboard = () => {
         address: storeData.address,
         city: storeData.city,
         province: storeData.province,
+        postal_code: storeData.postal_code,
         latitude: storeData.latitude,
         longitude: storeData.longitude,
         phone: storeData.phone,

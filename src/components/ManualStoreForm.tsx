@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Plus, MapPin, Building, Phone, Globe, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ interface StoreFormData {
   address: string;
   city: string;
   province: string;
+  postal_code?: string;
   phone?: string;
   website?: string;
   services?: string[];
@@ -31,6 +33,7 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
     address: '',
     city: '',
     province: '',
+    postal_code: '',
     phone: '',
     website: '',
     services: []
@@ -84,6 +87,7 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
         address: '',
         city: '',
         province: '',
+        postal_code: '',
         phone: '',
         website: '',
         services: []
@@ -181,7 +185,7 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <Label htmlFor="city">Città *</Label>
               <Input
@@ -200,6 +204,16 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
                 onChange={(e) => handleInputChange('province', e.target.value)}
                 required
                 placeholder="es. AN"
+              />
+            </div>
+            <div>
+              <Label htmlFor="postal_code">CAP</Label>
+              <Input
+                id="postal_code"
+                value={formData.postal_code}
+                onChange={(e) => handleInputChange('postal_code', e.target.value)}
+                placeholder="es. 60121"
+                maxLength={5}
               />
             </div>
           </div>
