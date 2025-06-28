@@ -1,0 +1,348 @@
+
+import { useState, useRef } from "react";
+import { Upload, Download, MapPin, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+
+interface StoreData {
+  nomeNegozio: string;
+  brand: string;
+  indirizzoCompleto: string;
+  citta: string;
+  provincia: string;
+  categoria: string;
+  latitudine?: number;
+  longitudine?: number;
+  status?: 'pending' | 'geocoded' | 'error';
+  error?: string;
+}
+
+interface StoreUploaderProps {
+  onStoresUploaded: (stores: StoreData[]) => void;
+}
+
+const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
+  const [stores, setStores] = useState<StoreData[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
+
+  const downloadTemplate = () => {
+    const headers = ['Nome Negozio', 'Brand', 'Indirizzo completo', 'Città', 'Provincia', 'Categoria'];
+    const csvContent = headers.join(',') + '\n';
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'template_punti_vendita.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        throw new Error('Il file deve contenere almeno una riga di dati oltre all\'header');
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+      const requiredHeaders = ['Nome Negozio', 'Brand', 'Indirizzo completo', 'Città', 'Provincia', 'Categoria'];
+      
+      const missingHeaders = requiredHeaders.filter(req => 
+        !headers.some(h => h.toLowerCase().includes(req.toLowerCase().replace(' ', '')))
+      );
+
+      if (missingHeaders.length > 0) {
+        throw new Error(`Colonne mancanti: ${missingHeaders.join(', ')}`);
+      }
+
+      const parsedStores: StoreData[] = [];
+      
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+        
+        if (values.length >= 6) {
+          parsedStores.push({
+            nomeNegozio: values[0] || '',
+            brand: values[1] || '',
+            indirizzoCompleto: values[2] || '',
+            citta: values[3] || '',
+            provincia: values[4] || '',
+            categoria: values[5] || '',
+            status: 'pending'
+          });
+        }
+      }
+
+      setStores(parsedStores);
+      toast({
+        title: "File caricato con successo",
+        description: `${parsedStores.length} punti vendita importati`,
+      });
+
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Errore nel caricamento del file');
+      toast({
+        title: "Errore nel caricamento",
+        description: "Controlla il formato del file e riprova",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const geocodeAddress = async (address: string, city: string, province: string): Promise<{lat: number, lng: number}> => {
+    const fullAddress = `${address}, ${city}, ${province}, Italia`;
+    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
+    
+    const response = await fetch(url);
+    const data = await response.json();
+    
+    if (data.status !== 'OK' || !data.results.length) {
+      throw new Error(`Geocoding fallito per: ${fullAddress}`);
+    }
+    
+    const location = data.results[0].geometry.location;
+    return { lat: location.lat, lng: location.lng };
+  };
+
+  const startGeocoding = async () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "API Key richiesta",
+        description: "Inserisci la tua Google Maps API Key per procedere",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeocoding(true);
+    const updatedStores = [...stores];
+    
+    for (let i = 0; i < updatedStores.length; i++) {
+      try {
+        const coordinates = await geocodeAddress(
+          updatedStores[i].indirizzoCompleto,
+          updatedStores[i].citta,
+          updatedStores[i].provincia
+        );
+        
+        updatedStores[i].latitudine = coordinates.lat;
+        updatedStores[i].longitudine = coordinates.lng;
+        updatedStores[i].status = 'geocoded';
+        
+        setStores([...updatedStores]);
+        
+        // Delay per rispettare rate limits
+        await new Promise(resolve => setTimeout(resolve, 200));
+        
+      } catch (error) {
+        updatedStores[i].status = 'error';
+        updatedStores[i].error = error instanceof Error ? error.message : 'Errore geocodifica';
+        setStores([...updatedStores]);
+      }
+    }
+    
+    setIsGeocoding(false);
+    
+    const successCount = updatedStores.filter(s => s.status === 'geocoded').length;
+    toast({
+      title: "Geocodifica completata",
+      description: `${successCount}/${updatedStores.length} indirizzi geocodificati con successo`,
+    });
+  };
+
+  const handleSaveStores = () => {
+    const geocodedStores = stores.filter(s => s.status === 'geocoded');
+    onStoresUploaded(geocodedStores);
+    toast({
+      title: "Punti vendita salvati",
+      description: `${geocodedStores.length} punti vendita aggiunti al sistema`,
+    });
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge variant="secondary">In attesa</Badge>;
+      case 'geocoded':
+        return <Badge className="bg-green-100 text-green-700">Geocodificato</Badge>;
+      case 'error':
+        return <Badge variant="destructive">Errore</Badge>;
+      default:
+        return <Badge variant="outline">Sconosciuto</Badge>;
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Upload Section */}
+      <Card className="bg-white/70 backdrop-blur-sm border-green-100">
+        <CardHeader>
+          <CardTitle className="flex items-center text-gray-900">
+            <Upload className="h-5 w-5 mr-2 text-green-600" />
+            Caricamento Punti Vendita
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={downloadTemplate}
+              className="border-green-200"
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Scarica Template
+            </Button>
+            
+            <div className="flex-1">
+              <Input
+                type="file"
+                accept=".csv,.xlsx,.xls"
+                onChange={handleFileUpload}
+                ref={fileInputRef}
+                className="border-green-200"
+                disabled={isUploading}
+              />
+            </div>
+            
+            {isUploading && <Loader2 className="h-4 w-4 animate-spin text-green-600" />}
+          </div>
+
+          {uploadError && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{uploadError}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Google Maps API Key */}
+      {stores.length > 0 && (
+        <Card className="bg-white/70 backdrop-blur-sm border-blue-100">
+          <CardHeader>
+            <CardTitle className="flex items-center text-gray-900">
+              <MapPin className="h-5 w-5 mr-2 text-blue-600" />
+              Geocodifica Automatica
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700">
+                Google Maps API Key (per geocodifica)
+              </label>
+              <Input
+                type="password"
+                placeholder="Inserisci la tua Google Maps API Key"
+                value={apiKey}
+                onChange={(e) => setApiKey(e.target.value)}
+                className="border-blue-200"
+              />
+              <p className="text-xs text-gray-600">
+                Necessaria per convertire automaticamente gli indirizzi in coordinate GPS
+              </p>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Button
+                onClick={startGeocoding}
+                disabled={isGeocoding || !apiKey.trim()}
+                className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
+              >
+                {isGeocoding ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Geocodifica in corso...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="h-4 w-4 mr-2" />
+                    Avvia Geocodifica
+                  </>
+                )}
+              </Button>
+              
+              {stores.filter(s => s.status === 'geocoded').length > 0 && (
+                <Button
+                  onClick={handleSaveStores}
+                  variant="outline"
+                  className="border-green-200"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Salva Punti Vendita ({stores.filter(s => s.status === 'geocoded').length})
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Preview Table */}
+      {stores.length > 0 && (
+        <Card className="bg-white/70 backdrop-blur-sm border-green-100">
+          <CardHeader>
+            <CardTitle className="text-gray-900">
+              Anteprima Dati ({stores.length} punti vendita)
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="max-h-96 overflow-y-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nome Negozio</TableHead>
+                    <TableHead>Brand</TableHead>
+                    <TableHead>Città</TableHead>
+                    <TableHead>Provincia</TableHead>
+                    <TableHead>Categoria</TableHead>
+                    <TableHead>Stato</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {stores.map((store, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="font-medium">{store.nomeNegozio}</TableCell>
+                      <TableCell>{store.brand}</TableCell>
+                      <TableCell>{store.citta}</TableCell>
+                      <TableCell>{store.provincia}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{store.categoria}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {getStatusBadge(store.status || 'pending')}
+                        {store.error && (
+                          <p className="text-xs text-red-600 mt-1">{store.error}</p>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+};
+
+export default StoreUploader;

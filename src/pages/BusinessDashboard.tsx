@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -19,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import StoreUploader from "@/components/StoreUploader";
 
 const BusinessDashboard = () => {
   const [businessData] = useState({
@@ -66,6 +66,14 @@ const BusinessDashboard = () => {
       monthlyGrowth: 12
     }
   });
+
+  const [showUploader, setShowUploader] = useState(false);
+
+  const handleStoresUploaded = (newStores: any[]) => {
+    console.log("Nuovi punti vendita caricati:", newStores);
+    setShowUploader(false);
+    // Qui integrerai il salvataggio nel database
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-white">
@@ -270,9 +278,13 @@ const BusinessDashboard = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-2xl font-bold text-gray-900">Punti Vendita</h3>
               <div className="space-x-2">
-                <Button variant="outline" className="border-green-200">
+                <Button 
+                  variant="outline" 
+                  className="border-green-200"
+                  onClick={() => setShowUploader(!showUploader)}
+                >
                   <Upload className="h-4 w-4 mr-2" />
-                  Importa Excel
+                  Importa Excel/CSV
                 </Button>
                 <Button className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700">
                   <Plus className="h-4 w-4 mr-2" />
@@ -281,6 +293,12 @@ const BusinessDashboard = () => {
               </div>
             </div>
 
+            {/* Store Uploader */}
+            {showUploader && (
+              <StoreUploader onStoresUploaded={handleStoresUploaded} />
+            )}
+
+            {/* Existing stores table */}
             <Card className="bg-white/70 backdrop-blur-sm border-green-100">
               <CardContent className="p-0">
                 <Table>
