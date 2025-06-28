@@ -10,11 +10,14 @@ import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProducerLinkGeneratorProps {
-  producerSlug: string;
-  producerName: string;
+  producerSlug?: string;
+  producerName?: string;
 }
 
-const ProducerLinkGenerator = ({ producerSlug, producerName }: ProducerLinkGeneratorProps) => {
+const ProducerLinkGenerator = ({ 
+  producerSlug = "pastificio-del-borgo", 
+  producerName = "Pastificio del Borgo" 
+}: ProducerLinkGeneratorProps) => {
   const [copiedItem, setCopiedItem] = useState<string | null>(null);
   const { toast } = useToast();
 

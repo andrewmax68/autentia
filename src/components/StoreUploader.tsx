@@ -1,4 +1,3 @@
-
 import { useState, useRef } from "react";
 import { Upload, Download, MapPin, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,7 +22,7 @@ interface StoreData {
 }
 
 interface StoreUploaderProps {
-  onStoresUploaded: (stores: StoreData[]) => void;
+  onStoresUploaded?: (stores: StoreData[]) => void;
 }
 
 const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
@@ -172,7 +171,9 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
 
   const handleSaveStores = () => {
     const geocodedStores = stores.filter(s => s.status === 'geocoded');
-    onStoresUploaded(geocodedStores);
+    if (onStoresUploaded) {
+      onStoresUploaded(geocodedStores);
+    }
     toast({
       title: "Punti vendita salvati",
       description: `${geocodedStores.length} punti vendita aggiunti al sistema`,

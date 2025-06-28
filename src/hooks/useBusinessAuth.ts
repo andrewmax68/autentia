@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,9 +20,56 @@ export interface BusinessFormData {
   acceptTerms: boolean;
 }
 
+export interface Business {
+  id: string;
+  company_name: string;
+  owner_name: string;
+  email: string;
+  phone: string;
+  category: string;
+  region: string;
+  description: string;
+  website: string;
+  logo_url: string | null;
+  primary_brand: string;
+  secondary_brands: string[];
+  slug: string;
+}
+
 export const useBusinessAuth = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const [business, setBusiness] = useState<Business | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
+
+  // Check if user is logged in and get business data
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // Mock business data for now
+        const mockBusiness: Business = {
+          id: session.user.id,
+          company_name: "Pastificio del Borgo",
+          owner_name: "Mario Rossi",
+          email: session.user.email || "",
+          phone: "+39 333 123 4567",
+          category: "Alimentari",
+          region: "Toscana",
+          description: "Produzione artigianale di pasta fresca",
+          website: "https://pastificiobargo.it",
+          logo_url: null,
+          primary_brand: "Pasta del Borgo",
+          secondary_brands: ["Bio Pasta", "Pasta Premium"],
+          slug: "pastificio-del-borgo"
+        };
+        setBusiness(mockBusiness);
+        setIsAuthenticated(true);
+      }
+    };
+
+    checkAuth();
+  }, []);
 
   const signUp = async (formData: BusinessFormData) => {
     setIsLoading(true);
@@ -96,5 +143,61 @@ export const useBusinessAuth = () => {
     }
   };
 
-  return { signUp, isLoading };
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        const mockBusiness: Business = {
+          id: data.user.id,
+          company_name: "Pastificio del Borgo",
+          owner_name: "Mario Rossi",
+          email: data.user.email || "",
+          phone: "+39 333 123 4567",
+          category: "Alimentari",
+          region: "Toscana",
+          description: "Produzione artigianale di pasta fresca",
+          website: "https://pastificiobargo.it",
+          logo_url: null,
+          primary_brand: "Pasta del Borgo",
+          secondary_brands: ["Bio Pasta", "Pasta Premium"],
+          slug: "pastificio-del-borgo"
+        };
+        setBusiness(mockBusiness);
+        setIsAuthenticated(true);
+      }
+
+      return { success: true };
+    } catch (error: any) {
+      toast({
+        title: "Errore di login",
+        description: error.message,
+        variant: "destructive",
+      });
+      return { success: false, error: error.message };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setBusiness(null);
+    setIsAuthenticated(false);
+  };
+
+  return { 
+    signUp, 
+    login, 
+    logout, 
+    business, 
+    isAuthenticated, 
+    isLoading 
+  };
 };

@@ -11,7 +11,7 @@ import StoreUploader from "@/components/StoreUploader";
 import ProducerLinkGenerator from "@/components/ProducerLinkGenerator";
 
 const BusinessDashboard = () => {
-  const { business, logout } = useBusinessAuth();
+  const { business, logout, isAuthenticated } = useBusinessAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -20,9 +20,28 @@ const BusinessDashboard = () => {
     navigate("/business-login");
   };
 
+  // Show loading state if auth is being checked
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Accesso richiesto</p>
+          <Button onClick={() => navigate("/business-login")}>
+            Accedi
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!business) {
-    navigate("/business-login");
-    return null;
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Caricamento dati azienda...</p>
+        </div>
+      </div>
+    );
   }
 
   const mockStats = {
@@ -30,6 +49,11 @@ const BusinessDashboard = () => {
     activeStores: 10,
     monthlyViews: 245,
     weeklyGrowth: "+12%"
+  };
+
+  const handleStoresUploaded = (stores: any[]) => {
+    console.log("Stores uploaded:", stores);
+    // Here you would typically save to database
   };
 
   return (
@@ -133,7 +157,7 @@ const BusinessDashboard = () => {
           </TabsContent>
 
           <TabsContent value="stores">
-            <StoreUploader />
+            <StoreUploader onStoresUploaded={handleStoresUploaded} />
           </TabsContent>
 
           <TabsContent value="analytics">
@@ -153,7 +177,10 @@ const BusinessDashboard = () => {
           </TabsContent>
 
           <TabsContent value="sharing">
-            <ProducerLinkGenerator />
+            <ProducerLinkGenerator 
+              producerSlug={business.slug}
+              producerName={business.company_name}
+            />
           </TabsContent>
         </Tabs>
       </div>
