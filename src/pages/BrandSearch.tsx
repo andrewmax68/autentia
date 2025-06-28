@@ -75,6 +75,7 @@ const BrandSearch = () => {
           const firstStore = data[0];
           setExactBrandName(firstStore.brand || firstStore.business_name || term);
           setBrandLogo(firstStore.logo_url);
+          console.log('Brand logo URL:', firstStore.logo_url);
           
           // Calculate map bounds
           const validStores = data.filter(store => 
@@ -129,7 +130,7 @@ const BrandSearch = () => {
             <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
               <Input
                 type="text"
-                placeholder="Cerca brand o azienda (es. Salumificio Rossi, Ceramiche Blu)"
+                placeholder="Cerca brand o azienda (es. Terra delle Marche, Ceramiche Blu)"
                 value={brandSearch}
                 onChange={(e) => setBrandSearch(e.target.value)}
                 className="flex-1"
@@ -152,7 +153,11 @@ const BrandSearch = () => {
                 <img 
                   src={brandLogo} 
                   alt={exactBrandName}
-                  className="h-12 w-12 object-contain rounded-lg border"
+                  className="h-12 w-12 object-contain rounded-lg border bg-white p-1"
+                  onError={(e) => {
+                    console.log('Error loading brand logo:', brandLogo);
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               )}
               <div>
@@ -201,50 +206,56 @@ const BrandSearch = () => {
                       parseFloat(store.longitude.toString())
                     ]}
                   >
-                    <Popup>
-                      <div className="p-2">
-                        <div className="flex items-center gap-3 mb-2">
+                    <Popup maxWidth={350} className="custom-popup">
+                      <div className="p-3 min-w-[250px]">
+                        <div className="flex items-center gap-3 mb-3">
                           {store.logo_url && (
                             <img 
                               src={store.logo_url} 
-                              alt={store.brand}
-                              className="h-8 w-8 object-contain rounded"
+                              alt={store.brand || store.business_name}
+                              className="h-10 w-10 object-contain rounded bg-white border p-1"
+                              onError={(e) => {
+                                console.log('Error loading store logo in popup:', store.logo_url);
+                                e.currentTarget.style.display = 'none';
+                              }}
                             />
                           )}
-                          <div>
-                            <h3 className="font-semibold text-lg">{store.store_name}</h3>
-                            <p className="text-sm text-green-600 font-medium">{store.brand}</p>
+                          <div className="flex-1">
+                            <h3 className="font-bold text-lg text-gray-900 mb-1">{store.store_name}</h3>
+                            <p className="text-sm text-green-600 font-semibold">{store.brand || store.business_name}</p>
                           </div>
                         </div>
-                        <p className="text-sm mb-1">
-                          <strong>Indirizzo:</strong> {store.address}, {store.city}
-                        </p>
-                        {store.phone && (
-                          <p className="text-sm mb-1">
-                            <strong>Telefono:</strong> {store.phone}
+                        <div className="space-y-2">
+                          <p className="text-sm text-gray-700">
+                            <strong>Indirizzo:</strong> {store.address}, {store.city}
                           </p>
-                        )}
-                        {store.email && (
-                          <p className="text-sm mb-1">
-                            <strong>Email:</strong> {store.email}
-                          </p>
-                        )}
-                        {store.website && (
-                          <p className="text-sm mb-1">
-                            <strong>Sito:</strong> 
-                            <a href={store.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
-                              Visita
-                            </a>
-                          </p>
-                        )}
-                        {store.opening_hours && (
-                          <div className="text-sm mt-2">
-                            <strong>Orari:</strong>
-                            <pre className="text-xs mt-1 whitespace-pre-wrap">
-                              {JSON.stringify(store.opening_hours, null, 2)}
-                            </pre>
-                          </div>
-                        )}
+                          {store.phone && (
+                            <p className="text-sm text-gray-700">
+                              <strong>Telefono:</strong> {store.phone}
+                            </p>
+                          )}
+                          {store.email && (
+                            <p className="text-sm text-gray-700">
+                              <strong>Email:</strong> {store.email}
+                            </p>
+                          )}
+                          {store.website && (
+                            <p className="text-sm">
+                              <strong>Sito:</strong> 
+                              <a href={store.website} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">
+                                Visita
+                              </a>
+                            </p>
+                          )}
+                          {store.services && store.services.length > 0 && (
+                            <div className="text-sm">
+                              <strong>Servizi:</strong>
+                              <div className="mt-1 text-xs text-gray-600">
+                                {store.services.join(', ')}
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </Popup>
                   </Marker>
@@ -253,6 +264,16 @@ const BrandSearch = () => {
           </div>
         )}
       </div>
+      
+      <style jsx>{`
+        .custom-popup .leaflet-popup-content {
+          margin: 0;
+        }
+        .custom-popup .leaflet-popup-content-wrapper {
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+      `}</style>
     </div>
   );
 };
