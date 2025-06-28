@@ -12,7 +12,7 @@ const Header = () => {
           </Link>
         </div>
         <nav className="hidden md:flex space-x-6 items-center">
-          <a href="#cerca-prodotti" className="text-gray-600 hover:text-gray-900">Cerca Prodotti</a>
+          <Link to="/cerca-brand" className="text-gray-600 hover:text-gray-900">Cerca Brand</Link>
           <a href="#per-produttori" className="text-gray-600 hover:text-gray-900">Per Produttori</a>
           <Link to="/admin/login">
             <Button variant="ghost" className="text-gray-600 hover:text-gray-900">

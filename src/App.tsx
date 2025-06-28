@@ -11,6 +11,7 @@ import Map from "./pages/Map";
 import AdminLogin from "./pages/AdminLogin";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminStores from "./pages/AdminStores";
+import BrandSearch from "./pages/BrandSearch";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/stores" element={<AdminStores />} />
+        <Route path="/cerca-brand" element={<BrandSearch />} />
       </Routes>
     </BrowserRouter>
   );
