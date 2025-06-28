@@ -19,6 +19,7 @@ interface Store {
   phone: string | null;
   email: string | null;
   is_active: boolean;
+  business_id: string | null;
   businesses?: {
     business_name: string;
     primary_brand: string;
