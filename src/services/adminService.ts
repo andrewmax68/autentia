@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AdminUser {
@@ -53,29 +52,15 @@ export const adminService = {
   },
 
   async getDashboardStats() {
-    // Usa una query più semplice che non dipende dalle politiche RLS
-    const [businessesResult, storesResult] = await Promise.all([
-      supabase.rpc('count_businesses'),
-      supabase.rpc('count_stores')
+    // Query dirette per contare i record
+    const [businessesQuery, storesQuery] = await Promise.all([
+      supabase.from('businesses').select('id', { count: 'exact', head: true }),
+      supabase.from('stores').select('id', { count: 'exact', head: true })
     ]);
 
-    // Fallback se le RPC functions non esistono
-    if (businessesResult.error || storesResult.error) {
-      // Prova con le query dirette
-      const [businessesQuery, storesQuery] = await Promise.all([
-        supabase.from('businesses').select('id', { count: 'exact', head: true }),
-        supabase.from('stores').select('id', { count: 'exact', head: true })
-      ]);
-
-      return {
-        totalBrands: businessesQuery.count || 0,
-        totalStores: storesQuery.count || 0
-      };
-    }
-
     return {
-      totalBrands: businessesResult.data || 0,
-      totalStores: storesResult.data || 0
+      totalBrands: businessesQuery.count || 0,
+      totalStores: storesQuery.count || 0
     };
   },
 
