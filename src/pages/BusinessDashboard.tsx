@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Store, Plus, LogOut, Edit, Trash2, ExternalLink, Share2 } from "lucide-react";
@@ -299,19 +298,19 @@ const BusinessDashboard = () => {
                 {showAddStore && (
                   <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                     <h3 className="text-lg font-semibold mb-4">Aggiungi Nuovo Punto Vendita</h3>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-6">
                       <div>
-                        <h4 className="font-medium mb-2">Inserimento Manuale</h4>
-                        <ManualStoreForm
-                          businessId={business.id}
-                          onStoreAdded={handleStoreAdded}
-                        />
-                      </div>
-                      <div>
-                        <h4 className="font-medium mb-2">Caricamento File</h4>
+                        <h4 className="font-medium mb-3">Caricamento File Excel/CSV</h4>
                         <StoreUploader
                           businessId={business.id}
                           onStoresUploaded={handleStoreAdded}
+                        />
+                      </div>
+                      <div className="border-t pt-6">
+                        <h4 className="font-medium mb-3">Inserimento Manuale</h4>
+                        <ManualStoreForm
+                          businessId={business.id}
+                          onStoreAdded={handleStoreAdded}
                         />
                       </div>
                     </div>
