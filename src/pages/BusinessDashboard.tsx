@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2, MapPin, Phone, Mail, Globe, Store, Link, Eye } from "lucide-react";
+import { LogOut, Building2, MapPin, Phone, Mail, Globe, Store, Link, Eye, Plus } from "lucide-react";
 import { useBusinessAuth } from "@/hooks/useBusinessAuth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -8,6 +8,7 @@ import StoreUploader from "@/components/StoreUploader";
 import ProducerLinkGenerator from "@/components/ProducerLinkGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import ManualStoreForm from "@/components/ManualStoreForm";
 
 interface StoreData {
   nomeNegozio: string;
@@ -27,7 +28,7 @@ const BusinessDashboard = () => {
   
   const { business, logout, isAuthenticated, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'links'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'manual' | 'links'>('overview');
   const { toast } = useToast();
 
   console.log('BusinessDashboard - State:', { business, isAuthenticated, isLoading });
@@ -72,6 +73,45 @@ const BusinessDashboard = () => {
       toast({
         title: "Errore nel salvataggio",
         description: "Si è verificato un errore durante il salvataggio dei punti vendita",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleManualStoreAdded = async (storeData: any) => {
+    if (!business) return;
+
+    try {
+      const storeToInsert = {
+        business_id: business.id,
+        store_name: storeData.store_name,
+        brand: storeData.brand,
+        address: storeData.address,
+        city: storeData.city,
+        province: storeData.province,
+        latitude: storeData.latitude,
+        longitude: storeData.longitude,
+        phone: storeData.phone,
+        website: storeData.website,
+        services: storeData.services
+      };
+
+      const { data, error } = await supabase
+        .from('stores')
+        .insert([storeToInsert]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Punto vendita aggiunto!",
+        description: "Il nuovo punto vendita è stato salvato con successo",
+      });
+
+    } catch (error) {
+      console.error('Error saving manual store:', error);
+      toast({
+        title: "Errore nel salvataggio",
+        description: "Si è verificato un errore durante il salvataggio",
         variant: "destructive",
       });
     }
@@ -161,7 +201,15 @@ const BusinessDashboard = () => {
             className="flex items-center gap-2"
           >
             <Store className="h-4 w-4" />
-            Carica Punti Vendita
+            Carica File CSV
+          </Button>
+          <Button
+            variant={activeTab === 'manual' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('manual')}
+            className="flex items-center gap-2"
+          >
+            <Plus className="h-4 w-4" />
+            Aggiungi Manualmente
           </Button>
           <Button
             variant={activeTab === 'links' ? 'default' : 'outline'}
@@ -339,6 +387,13 @@ const BusinessDashboard = () => {
         {activeTab === 'stores' && (
           <div>
             <StoreUploader onStoresUploaded={handleStoresUploaded} />
+          </div>
+        )}
+
+        {/* Manual Store Tab */}
+        {activeTab === 'manual' && (
+          <div>
+            <ManualStoreForm onStoreAdded={handleManualStoreAdded} />
           </div>
         )}
 
