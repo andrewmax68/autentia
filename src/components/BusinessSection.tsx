@@ -8,7 +8,8 @@ const BusinessSection = () => {
         <div className="text-center mb-12">
           <h3 className="text-3xl font-bold text-gray-900 mb-4">Per le Micro e Piccole Imprese Artigianali</h3>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Fai conoscere i tuoi brand artigianali di qualità e indica ai consumatori dove trovarli
+            Fai conoscere i tuoi brand artigianali di eccellenza e indica ai consumatori dove trovarli. 
+            Raggiungi food lovers, artisan lovers e consumatori curiosi che cercano qualità e artigianalità.
           </p>
         </div>
 
@@ -20,7 +21,7 @@ const BusinessSection = () => {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <div className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3"></div>
-                <span className="text-gray-700">Registra i tuoi brand artigianali e prodotti di qualità</span>
+                <span className="text-gray-700">Registra i tuoi brand artigianali di eccellenza</span>
               </li>
               <li className="flex items-start">
                 <div className="w-2 h-2 bg-green-600 rounded-full mt-2 mr-3"></div>
@@ -40,27 +41,27 @@ const BusinessSection = () => {
             </Button>
           </div>
           <div className="bg-white p-8 rounded-lg shadow-lg">
-            <h5 className="text-lg font-semibold text-gray-900 mb-4">Esempi di Brand Artigianali</h5>
+            <h5 className="text-lg font-semibold text-gray-900 mb-4">Esempi di Eccellenze Artigianali</h5>
             <div className="space-y-3">
               <div className="p-3 bg-green-50 rounded border-l-4 border-green-500">
                 <p className="text-sm text-green-800 font-medium">Pastificio del Borgo</p>
-                <p className="text-xs text-green-600">Pasta artigianale, farine locali</p>
+                <p className="text-xs text-green-600">Pasta artigianale con grani antichi</p>
               </div>
               <div className="p-3 bg-blue-50 rounded border-l-4 border-blue-500">
-                <p className="text-sm text-blue-800 font-medium">Oleificio San Marco</p>
-                <p className="text-xs text-blue-600">Olio extravergine DOP, olive del territorio</p>
+                <p className="text-sm text-blue-800 font-medium">Atelier Sofia</p>
+                <p className="text-xs text-blue-600">Borse in pelle lavorate a mano</p>
               </div>
               <div className="p-3 bg-purple-50 rounded border-l-4 border-purple-500">
-                <p className="text-sm text-purple-800 font-medium">Caseificio della Valle</p>
-                <p className="text-xs text-purple-600">Formaggi tradizionali, latte locale</p>
+                <p className="text-sm text-purple-800 font-medium">Essenza Naturale</p>
+                <p className="text-xs text-purple-600">Cosmetici biologici e saponi artigianali</p>
               </div>
               <div className="p-3 bg-orange-50 rounded border-l-4 border-orange-500">
-                <p className="text-sm text-orange-800 font-medium">Birrificio Montano</p>
-                <p className="text-xs text-orange-600">Birre artigianali, ingredienti naturali</p>
+                <p className="text-sm text-orange-800 font-medium">Ceramiche d'Arte</p>
+                <p className="text-xs text-orange-600">Oggettistica unica fatta a mano</p>
               </div>
               <div className="mt-4 p-4 bg-gray-50 rounded">
                 <p className="text-sm text-gray-600">
-                  <strong>Eccellenza artigianale che merita di essere scoperta!</strong> I consumatori cercheranno i tuoi prodotti di qualità e troveranno i tuoi punti vendita.
+                  <strong>Eccellenza artigianale che merita di essere scoperta!</strong> Food lovers, artisan lovers e consumatori curiosi troveranno i tuoi prodotti di qualità.
                 </p>
               </div>
             </div>

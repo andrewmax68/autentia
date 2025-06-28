@@ -9,7 +9,8 @@ const FeaturesSection = () => {
         <div className="text-center mb-12">
           <h3 className="text-3xl font-bold text-gray-900 mb-4">Come Funziona</h3>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Trova facilmente dove acquistare i tuoi brand preferiti nei negozi della tua zona
+            Che tu abbia assaggiato qualcosa di incredibile a un evento o sia un artisan lover sempre alla ricerca di eccellenze, 
+            trova facilmente dove acquistare i prodotti artigianali di qualità
           </p>
         </div>
         
@@ -21,7 +22,8 @@ const FeaturesSection = () => {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Digita il nome del brand che stai cercando: Barilla, De Cecco, Ferrero, Lavazza e migliaia di altri
+                Digita il nome del brand artigianale: quel formaggio assaggiato alla festa, il vino della fiera, 
+                la pasta di quella startup locale o esplora nuove eccellenze
               </CardDescription>
             </CardContent>
           </Card>
@@ -33,7 +35,7 @@ const FeaturesSection = () => {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Visualizza sulla mappa tutti i punti vendita vicino a te che hanno il brand disponibile
+                Visualizza sulla mappa tutti i punti vendita vicino a te che hanno il prodotto artigianale disponibile
               </CardDescription>
             </CardContent>
           </Card>
@@ -45,7 +47,7 @@ const FeaturesSection = () => {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Ottieni indicazioni, orari di apertura e disponibilità per organizzare al meglio la tua spesa
+                Ottieni indicazioni, orari di apertura e disponibilità per organizzare al meglio la tua spesa e portare a casa l'eccellenza
               </CardDescription>
             </CardContent>
           </Card>
