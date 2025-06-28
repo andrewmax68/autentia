@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Store, Plus, LogOut, Edit, Trash2, ExternalLink, Share2 } from "lucide-react";
@@ -296,18 +297,46 @@ const BusinessDashboard = () => {
               </CardHeader>
               <CardContent>
                 {showAddStore && (
-                  <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                    <h3 className="text-lg font-semibold mb-4">Aggiungi Nuovo Punto Vendita</h3>
-                    <div className="space-y-6">
-                      <div>
-                        <h4 className="font-medium mb-3">Caricamento File Excel/CSV</h4>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                    <h3 className="text-lg font-semibold mb-4 text-center">Aggiungi Nuovo Punto Vendita</h3>
+                    
+                    {/* Excel/CSV Upload Section */}
+                    <div className="mb-6">
+                      <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                        <h4 className="font-medium mb-3 text-blue-800 flex items-center">
+                          <Upload className="h-4 w-4 mr-2" />
+                          Caricamento File Excel/CSV
+                        </h4>
+                        <p className="text-sm text-blue-600 mb-3">
+                          Carica un file Excel o CSV con i tuoi punti vendita per importarli tutti insieme
+                        </p>
                         <StoreUploader
                           businessId={business.id}
                           onStoresUploaded={handleStoreAdded}
                         />
                       </div>
-                      <div className="border-t pt-6">
-                        <h4 className="font-medium mb-3">Inserimento Manuale</h4>
+                    </div>
+
+                    {/* Divider */}
+                    <div className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <span className="w-full border-t border-gray-300" />
+                      </div>
+                      <div className="relative flex justify-center text-xs uppercase">
+                        <span className="bg-gray-50 px-2 text-gray-500">oppure</span>
+                      </div>
+                    </div>
+
+                    {/* Manual Entry Section */}
+                    <div>
+                      <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                        <h4 className="font-medium mb-3 text-green-800 flex items-center">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Inserimento Manuale
+                        </h4>
+                        <p className="text-sm text-green-600 mb-3">
+                          Aggiungi un singolo punto vendita compilando il modulo
+                        </p>
                         <ManualStoreForm
                           businessId={business.id}
                           onStoreAdded={handleStoreAdded}
