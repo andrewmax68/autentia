@@ -1,7 +1,6 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin, Search, Store, Users } from "lucide-react";
+import { Search, Store, Users } from "lucide-react";
 
 const Index = () => {
   return (
@@ -9,9 +8,12 @@ const Index = () => {
       {/* Header */}
       <header className="border-b bg-white">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-8 w-8 text-green-600" />
-            <h1 className="text-2xl font-bold text-gray-900">Dove Si Vende?</h1>
+          <div className="flex items-center space-x-3">
+            <img 
+              src="/lovable-uploads/6b03f54d-ca30-4ce9-8444-aa880373241d.png" 
+              alt="Dove Si Vende? Logo" 
+              className="h-10 w-auto"
+            />
           </div>
           <nav className="hidden md:flex space-x-6">
             <a href="#acquirenti" className="text-gray-600 hover:text-gray-900">Per Acquirenti</a>
@@ -172,9 +174,12 @@ const Index = () => {
         <div className="container mx-auto px-4">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <MapPin className="h-6 w-6 text-green-500" />
-                <span className="text-lg font-semibold">Dove Si Vende?</span>
+              <div className="flex items-center space-x-3 mb-4">
+                <img 
+                  src="/lovable-uploads/6b03f54d-ca30-4ce9-8444-aa880373241d.png" 
+                  alt="Dove Si Vende? Logo" 
+                  className="h-8 w-auto filter brightness-0 invert"
+                />
               </div>
               <p className="text-gray-400">
                 Connettendo comunità locali attraverso il commercio autentico
