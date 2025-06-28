@@ -56,7 +56,7 @@ export const useBusinessAuth = () => {
       website: 'https://terradellemarche.it',
       primary_brand: 'Terra delle Marche',
       secondary_brands: ['Brand Secondario'],
-      is_verified: false
+      is_verified: true // Cambiato da false a true
     };
 
     setBusiness(testBusiness);
