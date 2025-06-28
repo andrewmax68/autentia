@@ -5,6 +5,8 @@ import Index from "./pages/Index";
 import BusinessSignup from "./pages/BusinessSignup";
 import BusinessLogin from "./pages/BusinessLogin";
 import BusinessDashboard from "./pages/BusinessDashboard";
+import ProducerMapPage from "./pages/ProducerMapPage";
+import ProducerWidget from "./pages/ProducerWidget";
 
 const App = () => {
   return (
@@ -14,6 +16,8 @@ const App = () => {
         <Route path="/business-signup" element={<BusinessSignup />} />
         <Route path="/business-login" element={<BusinessLogin />} />
         <Route path="/business-dashboard" element={<BusinessDashboard />} />
+        <Route path="/produttore/:slug" element={<ProducerMapPage />} />
+        <Route path="/widget/:slug" element={<ProducerWidget />} />
       </Routes>
     </BrowserRouter>
   );

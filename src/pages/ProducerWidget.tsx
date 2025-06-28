@@ -1,65 +1,84 @@
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { MapPin, ExternalLink } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { MapPin, Store, Phone, Mail } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { supabase } from "@/integrations/supabase/client";
+
+interface Store {
+  id: string;
+  store_name: string;
+  brand: string;
+  address: string;
+  city: string;
+  province: string;
+  phone: string | null;
+  email: string | null;
+  services: string[] | null;
+}
+
+interface Producer {
+  id: string;
+  business_name: string;
+  primary_brand: string;
+  logo_url: string | null;
+}
 
 const ProducerWidget = () => {
-  const { slug } = useParams();
-  const [producer, setProducer] = useState(null);
-  const [stores, setStores] = useState([]);
+  const { slug } = useParams<{ slug: string }>();
+  const [producer, setProducer] = useState<Producer | null>(null);
+  const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data - in realtà verrà dal database
   useEffect(() => {
-    const mockProducer = {
-      name: "Pastificio del Borgo",
-      logo: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=50&h=50&fit=crop&crop=center"
+    const fetchData = async () => {
+      if (!slug) return;
+
+      try {
+        const searchName = slug.replace(/-/g, ' ');
+        
+        const { data: producerData, error: producerError } = await supabase
+          .from('public_businesses')
+          .select('id, business_name, primary_brand, logo_url')
+          .ilike('business_name', `%${searchName}%`)
+          .single();
+
+        if (producerError) {
+          console.error('Error fetching producer:', producerError);
+          return;
+        }
+
+        setProducer(producerData);
+
+        const { data: storesData, error: storesError } = await supabase
+          .from('public_stores')
+          .select('id, store_name, brand, address, city, province, phone, email, services')
+          .eq('business_name', producerData.business_name)
+          .limit(6); // Limit for widget
+
+        if (!storesError && storesData) {
+          setStores(storesData);
+        }
+
+      } catch (err) {
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    const mockStores = [
-      {
-        id: 1,
-        name: "Bio Market Centrale",
-        address: "Via Roma 123, Firenze",
-        city: "Firenze",
-        latitude: 43.7696,
-        longitude: 11.2558
-      },
-      {
-        id: 2,
-        name: "Alimentari Gourmet", 
-        address: "Corso Italia 45, Siena",
-        city: "Siena",
-        latitude: 43.3188,
-        longitude: 11.3307
-      },
-      {
-        id: 3,
-        name: "Supermercato Bio Verde",
-        address: "Piazza del Campo 12, Siena", 
-        city: "Siena",
-        latitude: 43.3181,
-        longitude: 11.3316
-      }
-    ];
-
-    setTimeout(() => {
-      setProducer(mockProducer);
-      setStores(mockStores);
-      setLoading(false);
-    }, 300);
+    fetchData();
   }, [slug]);
 
   if (loading) {
     return (
       <div className="p-4 bg-white rounded-lg shadow-sm">
         <div className="animate-pulse">
-          <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
-          <div className="space-y-2">
-            <div className="h-3 bg-gray-200 rounded"></div>
-            <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+          <div className="h-4 bg-gray-200 rounded mb-4"></div>
+          <div className="space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 bg-gray-200 rounded"></div>
+            ))}
           </div>
         </div>
       </div>
@@ -69,103 +88,116 @@ const ProducerWidget = () => {
   if (!producer) {
     return (
       <div className="p-4 bg-white rounded-lg shadow-sm text-center">
-        <p className="text-gray-500 text-sm">Produttore non trovato</p>
+        <p className="text-gray-600">Produttore non trovato</p>
       </div>
     );
   }
 
-  const baseUrl = window.location.origin;
-  const fullPageUrl = `${baseUrl}/produttore/${slug}`;
-
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      {/* Header del widget */}
-      <div className="bg-gradient-to-r from-green-600 to-blue-600 text-white p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <img
-              src={producer.logo}
-              alt={producer.name}
-              className="w-8 h-8 rounded-lg border border-white/20"
-            />
-            <div>
-              <h3 className="font-semibold text-white text-sm">{producer.name}</h3>
-              <p className="text-green-100 text-xs">Dove acquistare</p>
-            </div>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            className="bg-white/10 border-white/20 text-white hover:bg-white/20 text-xs"
-            asChild
-          >
-            <a href={fullPageUrl} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-3 w-3 mr-1" />
-              Vedi tutto
-            </a>
-          </Button>
+    <div className="p-4 bg-white rounded-lg shadow-sm max-w-md mx-auto font-sans">
+      {/* Header */}
+      <div className="flex items-center space-x-3 mb-4 pb-3 border-b">
+        {producer.logo_url && (
+          <img 
+            src={producer.logo_url} 
+            alt={producer.business_name}
+            className="w-10 h-10 rounded-lg object-cover"
+          />
+        )}
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900 text-sm">
+            {producer.business_name}
+          </h3>
+          <p className="text-green-600 text-xs font-medium">
+            {producer.primary_brand}
+          </p>
+        </div>
+        <div className="bg-gradient-to-r from-green-600 to-blue-600 p-1.5 rounded">
+          <MapPin className="h-4 w-4 text-white" />
         </div>
       </div>
 
-      {/* Lista punti vendita */}
-      <div className="p-3 max-h-64 overflow-y-auto">
+      {/* Stores */}
+      {stores.length === 0 ? (
+        <div className="text-center py-6">
+          <Store className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+          <p className="text-gray-600 text-sm">
+            Nessun punto vendita disponibile
+          </p>
+        </div>
+      ) : (
         <div className="space-y-3">
-          {stores.slice(0, 4).map((store) => (
-            <div key={store.id} className="flex items-start justify-between p-2 bg-gray-50 rounded-lg">
-              <div className="flex-1 min-w-0">
-                <h4 className="font-medium text-gray-900 text-sm truncate">{store.name}</h4>
-                <p className="text-gray-600 text-xs truncate">{store.address}</p>
-                <Badge variant="outline" className="mt-1 text-xs">
-                  {store.city}
+          <div className="flex items-center gap-2 mb-3">
+            <Store className="h-4 w-4 text-green-600" />
+            <span className="text-sm font-medium text-gray-900">
+              Punti Vendita ({stores.length})
+            </span>
+          </div>
+          
+          {stores.map((store) => (
+            <div key={store.id} className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow">
+              <div className="flex items-start justify-between mb-2">
+                <h4 className="font-medium text-gray-900 text-sm">
+                  {store.store_name}
+                </h4>
+                <Badge variant="outline" className="text-xs">
+                  {store.brand}
                 </Badge>
               </div>
-              <Button
-                size="sm"
-                variant="outline"
-                className="ml-2 text-xs"
-                asChild
-              >
-                <a 
-                  href={`https://maps.google.com/maps?q=${store.latitude},${store.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <MapPin className="h-3 w-3" />
-                </a>
-              </Button>
+              
+              <div className="space-y-1 text-xs text-gray-600">
+                <div className="flex items-start gap-1">
+                  <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p>{store.address}</p>
+                    <p>{store.city}, {store.province}</p>
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  {store.phone && (
+                    <div className="flex items-center gap-1">
+                      <Phone className="h-3 w-3" />
+                      <span>{store.phone}</span>
+                    </div>
+                  )}
+                  
+                  {store.email && (
+                    <div className="flex items-center gap-1">
+                      <Mail className="h-3 w-3" />
+                      <span className="truncate">{store.email}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           ))}
           
-          {stores.length > 4 && (
+          {stores.length >= 6 && (
             <div className="text-center pt-2">
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full text-xs"
-                asChild
+              <a 
+                href={`${window.location.origin}/produttore/${slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-green-600 hover:text-green-700 font-medium"
               >
-                <a href={fullPageUrl} target="_blank" rel="noopener noreferrer">
-                  Vedi altri {stores.length - 4} punti vendita
-                </a>
-              </Button>
+                Vedi tutti i punti vendita →
+              </a>
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      {/* Footer del widget */}
-      <div className="bg-gray-50 px-3 py-2 text-center border-t">
-        <p className="text-xs text-gray-500">
-          Powered by{" "}
-          <a 
-            href={baseUrl} 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="text-green-600 hover:text-green-700"
-          >
-            Dove Si Vende?
-          </a>
-        </p>
+      {/* Footer */}
+      <div className="mt-4 pt-3 border-t text-center">
+        <a 
+          href={window.location.origin}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-gray-500 hover:text-gray-700"
+        >
+          Powered by Dove Si Vende?
+        </a>
       </div>
     </div>
   );

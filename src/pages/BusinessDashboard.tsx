@@ -1,11 +1,11 @@
-
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2, MapPin, Phone, Mail, Globe, Store } from "lucide-react";
+import { LogOut, Building2, MapPin, Phone, Mail, Globe, Store, Link, Eye } from "lucide-react";
 import { useBusinessAuth } from "@/hooks/useBusinessAuth";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import StoreUploader from "@/components/StoreUploader";
+import ProducerLinkGenerator from "@/components/ProducerLinkGenerator";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
@@ -27,7 +27,7 @@ const BusinessDashboard = () => {
   
   const { business, logout, isAuthenticated, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'stores'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'links'>('overview');
   const { toast } = useToast();
 
   console.log('BusinessDashboard - State:', { business, isAuthenticated, isLoading });
@@ -122,6 +122,11 @@ const BusinessDashboard = () => {
 
   console.log('BusinessDashboard - Rendering main dashboard');
 
+  // Generate producer slug from business name
+  const producerSlug = business?.business_name?.toLowerCase()
+    .replace(/[^a-zA-Z0-9\s]/g, '')
+    .replace(/\s+/g, '-') || 'producer';
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b">
@@ -158,95 +163,142 @@ const BusinessDashboard = () => {
             <Store className="h-4 w-4" />
             Carica Punti Vendita
           </Button>
+          <Button
+            variant={activeTab === 'links' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('links')}
+            className="flex items-center gap-2"
+          >
+            <Link className="h-4 w-4" />
+            Link e Condivisione
+          </Button>
         </div>
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-            {/* Company Info Card */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5 text-green-600" />
-                  Informazioni Azienda
-                </CardTitle>
-                <CardDescription>
-                  Dettagli della tua attività
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="h-4 w-4 text-gray-500" />
-                    <div>
-                      <p className="font-medium">{business.business_name}</p>
-                      <p className="text-sm text-gray-600">Proprietario: {business.owner_name}</p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Company Info Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-green-600" />
+                    Informazioni Azienda
+                  </CardTitle>
+                  <CardDescription>
+                    Dettagli della tua attività
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="h-4 w-4 text-gray-500" />
+                      <div>
+                        <p className="font-medium">{business.business_name}</p>
+                        <p className="text-sm text-gray-600">Proprietario: {business.owner_name}</p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <Mail className="h-4 w-4 text-gray-500" />
+                      <p className="text-sm">{business.email}</p>
+                    </div>
+                    
+                    {business.phone && (
+                      <div className="flex items-center gap-3">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        <p className="text-sm">{business.phone}</p>
+                      </div>
+                    )}
+                    
+                    {business.website && (
+                      <div className="flex items-center gap-3">
+                        <Globe className="h-4 w-4 text-gray-500" />
+                        <a href={business.website} target="_blank" rel="noopener noreferrer" 
+                           className="text-sm text-blue-600 hover:underline">
+                          {business.website}
+                        </a>
+                      </div>
+                    )}
+                    
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-4 w-4 text-gray-500" />
+                      <p className="text-sm">{business.region} - {business.category}</p>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-3">
-                    <Mail className="h-4 w-4 text-gray-500" />
-                    <p className="text-sm">{business.email}</p>
-                  </div>
-                  
-                  {business.phone && (
-                    <div className="flex items-center gap-3">
-                      <Phone className="h-4 w-4 text-gray-500" />
-                      <p className="text-sm">{business.phone}</p>
+                  {business.description && (
+                    <div className="pt-3 border-t">
+                      <p className="text-sm text-gray-600">{business.description}</p>
                     </div>
                   )}
-                  
-                  {business.website && (
-                    <div className="flex items-center gap-3">
-                      <Globe className="h-4 w-4 text-gray-500" />
-                      <a href={business.website} target="_blank" rel="noopener noreferrer" 
-                         className="text-sm text-blue-600 hover:underline">
-                        {business.website}
-                      </a>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center gap-3">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    <p className="text-sm">{business.region} - {business.category}</p>
-                  </div>
-                </div>
-                
-                {business.description && (
-                  <div className="pt-3 border-t">
-                    <p className="text-sm text-gray-600">{business.description}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Brand Info Card */}
+              {/* Brand Info Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>I Tuoi Brand</CardTitle>
+                  <CardDescription>
+                    Brand e prodotti che offri
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="font-medium text-green-600">Brand Principale</p>
+                      <p className="text-lg">{business.primary_brand}</p>
+                    </div>
+                    
+                    {business.secondary_brands && business.secondary_brands.length > 0 && (
+                      <div>
+                        <p className="font-medium text-gray-700">Brand Secondari</p>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {business.secondary_brands.map((brand, index) => (
+                            <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                              {brand}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Quick Actions */}
             <Card>
               <CardHeader>
-                <CardTitle>I Tuoi Brand</CardTitle>
+                <CardTitle>Azioni Rapide</CardTitle>
                 <CardDescription>
-                  Brand e prodotti che offri
+                  Gestisci i tuoi punti vendita e condividi la tua mappa
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
-                  <div>
-                    <p className="font-medium text-green-600">Brand Principale</p>
-                    <p className="text-lg">{business.primary_brand}</p>
-                  </div>
-                  
-                  {business.secondary_brands && business.secondary_brands.length > 0 && (
-                    <div>
-                      <p className="font-medium text-gray-700">Brand Secondari</p>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {business.secondary_brands.map((brand, index) => (
-                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                            {brand}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    onClick={() => navigate(`/produttore/${producerSlug}`)}
+                    className="flex items-center gap-2"
+                  >
+                    <Eye className="h-4 w-4" />
+                    Visualizza Mappa Pubblica
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab('stores')}
+                    className="flex items-center gap-2"
+                  >
+                    <Store className="h-4 w-4" />
+                    Carica Punti Vendita
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setActiveTab('links')}
+                    className="flex items-center gap-2"
+                  >
+                    <Link className="h-4 w-4" />
+                    Genera Link e QR Code
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -287,6 +339,16 @@ const BusinessDashboard = () => {
         {activeTab === 'stores' && (
           <div>
             <StoreUploader onStoresUploaded={handleStoresUploaded} />
+          </div>
+        )}
+
+        {/* Links Tab */}
+        {activeTab === 'links' && (
+          <div>
+            <ProducerLinkGenerator 
+              producerSlug={producerSlug}
+              producerName={business?.business_name || "Tua Azienda"}
+            />
           </div>
         )}
       </div>
