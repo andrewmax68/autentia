@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -11,7 +12,8 @@ import {
   Edit,
   Eye,
   Trash2,
-  Upload
+  Upload,
+  Share2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,10 +21,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import StoreUploader from "@/components/StoreUploader";
+import ProducerLinkGenerator from "@/components/ProducerLinkGenerator";
 
 const BusinessDashboard = () => {
   const [businessData] = useState({
     name: "Azienda Agricola Rossi",
+    slug: "azienda-agricola-rossi", // Slug per URL
     category: "Alimentari",
     region: "Toscana",
     description: "Produttori di olio extravergine di oliva biologico dal 1950",
@@ -91,7 +95,7 @@ const BusinessDashboard = () => {
             </Link>
             <nav className="flex items-center space-x-4">
               <Badge className="bg-green-100 text-green-700 border-green-200">
-                Dashboard Impresa
+                Dashboard Produttore
               </Badge>
               <Button variant="outline" className="border-green-200">
                 <Settings className="h-4 w-4 mr-2" />
@@ -148,7 +152,7 @@ const BusinessDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="grid w-full grid-cols-4 bg-white/70 backdrop-blur-sm border border-green-100">
+          <TabsList className="grid w-full grid-cols-5 bg-white/70 backdrop-blur-sm border border-green-100">
             <TabsTrigger value="overview" className="data-[state=active]:bg-green-100">
               Panoramica
             </TabsTrigger>
@@ -157,6 +161,9 @@ const BusinessDashboard = () => {
             </TabsTrigger>
             <TabsTrigger value="stores" className="data-[state=active]:bg-green-100">
               Punti Vendita
+            </TabsTrigger>
+            <TabsTrigger value="sharing" className="data-[state=active]:bg-green-100">
+              Condivisione
             </TabsTrigger>
             <TabsTrigger value="profile" className="data-[state=active]:bg-green-100">
               Profilo
@@ -348,6 +355,25 @@ const BusinessDashboard = () => {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Sharing Tab - NUOVA SEZIONE */}
+          <TabsContent value="sharing" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900">Link e Condivisione</h3>
+                <p className="text-gray-600 mt-1">Genera link, QR code e codici embed per il tuo sito web</p>
+              </div>
+              <Button variant="outline" className="border-green-200">
+                <Share2 className="h-4 w-4 mr-2" />
+                Condividi Profilo
+              </Button>
+            </div>
+
+            <ProducerLinkGenerator 
+              producerSlug={businessData.slug}
+              producerName={businessData.name}
+            />
           </TabsContent>
 
           {/* Profile Tab */}
