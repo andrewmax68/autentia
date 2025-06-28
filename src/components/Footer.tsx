@@ -25,10 +25,10 @@ const Footer = () => {
             </ul>
           </div>
           <div>
-            <h6 className="font-semibold mb-4">Per Negozi</h6>
+            <h6 className="font-semibold mb-4">Per Imprese</h6>
             <ul className="space-y-2 text-gray-400">
-              <li><a href="#" className="hover:text-white">Registrati</a></li>
-              <li><a href="#" className="hover:text-white">Gestisci Brand</a></li>
+              <li><a href="#" className="hover:text-white">Registra Brand</a></li>
+              <li><a href="#" className="hover:text-white">Gestisci Punti Vendita</a></li>
               <li><a href="#" className="hover:text-white">Supporto</a></li>
             </ul>
           </div>
