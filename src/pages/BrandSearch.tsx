@@ -160,15 +160,13 @@ const BrandSearch = () => {
         {hasSearched && stores.length > 0 && (
           <div className="h-[calc(100vh-200px)]">
             <MapContainer
-              center={defaultCenter}
-              zoom={6}
-              style={{ height: '100%', width: '100%' }}
               bounds={mapBounds || undefined}
+              style={{ height: '100%', width: '100%' }}
               boundsOptions={{ padding: [20, 20] }}
             >
               <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
               
               {stores
