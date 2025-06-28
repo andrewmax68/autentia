@@ -1,15 +1,19 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { MapPin, Mail, Lock, Building2, User, Phone, ArrowRight, Upload, Globe } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { MapPin, Mail, Lock, Building2, User, Phone, ArrowRight, Upload, Globe, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useBusinessAuth, BusinessFormData } from "@/hooks/useBusinessAuth";
 
 const BusinessSignup = () => {
-  const [formData, setFormData] = useState({
+  const navigate = useNavigate();
+  const { signUp, isLoading } = useBusinessAuth();
+  
+  const [formData, setFormData] = useState<BusinessFormData>({
     businessName: "",
     ownerName: "",
     email: "",
@@ -20,18 +24,32 @@ const BusinessSignup = () => {
     region: "",
     description: "",
     website: "",
-    logo: null as File | null,
+    primaryBrand: "", // New field
+    secondaryBrands: [], // New field for multiple brands
+    logo: null,
     acceptTerms: false
   });
-  const [isLoading, setIsLoading] = useState(false);
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [newBrand, setNewBrand] = useState("");
 
   const categories = ["Alimentari", "Bevande", "Cosmetici", "Artigianato", "Tessile", "Agricoltura", "Altro"];
   const regions = ["Lombardia", "Piemonte", "Toscana", "Umbria", "Lazio", "Campania", "Sicilia", "Altro"];
 
-  const handleInputChange = (field: string, value: string | boolean | File | null) => {
+  const handleInputChange = (field: keyof BusinessFormData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const addSecondaryBrand = () => {
+    if (newBrand.trim() && !formData.secondaryBrands.includes(newBrand.trim())) {
+      handleInputChange('secondaryBrands', [...formData.secondaryBrands, newBrand.trim()]);
+      setNewBrand("");
+    }
+  };
+
+  const removeSecondaryBrand = (brandToRemove: string) => {
+    handleInputChange('secondaryBrands', formData.secondaryBrands.filter(brand => brand !== brandToRemove));
   };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,35 +76,35 @@ const BusinessSignup = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      alert("Le password non coincidono");
-      return;
-    }
-    
-    setIsLoading(true);
-    
-    // Simulazione registrazione - in futuro integrazione con Supabase
-    setTimeout(() => {
-      console.log("Registration attempt:", formData);
-      setIsLoading(false);
-      // Redirect to dashboard
-      window.location.href = "/business-dashboard";
-    }, 2000);
-  };
-
-  const handleSocialSignup = (provider: string) => {
-    console.log(`Signup with ${provider}`);
-    // In futuro integrazione con Supabase Auth
-  };
-
   const nextStep = () => {
     if (currentStep < 2) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      alert("Le password non coincidono");
+      return;
+    }
+
+    if (!formData.primaryBrand.trim()) {
+      alert("Il brand principale è obbligatorio");
+      return;
+    }
+    
+    const result = await signUp(formData);
+    if (result.success) {
+      navigate("/business-dashboard");
+    }
+  };
+
+  const handleSocialSignup = (provider: string) => {
+    console.log(`Signup with ${provider}`);
+    // In futuro integrazione con Supabase Auth
   };
 
   return (
@@ -251,6 +269,27 @@ const BusinessSignup = () => {
                     </div>
                   </div>
 
+                  {/* Primary Brand Field - NEW */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Brand Principale * 
+                      <span className="text-xs text-gray-500 block">
+                        Nome con cui i clienti cercheranno i tuoi prodotti
+                      </span>
+                    </label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        type="text"
+                        placeholder="Es. Pasta Nonna Maria"
+                        value={formData.primaryBrand}
+                        onChange={(e) => handleInputChange('primaryBrand', e.target.value)}
+                        className="pl-10 rounded-xl border-green-200 focus:border-green-400"
+                        required
+                      />
+                    </div>
+                  </div>
+
                   <Button
                     type="button"
                     onClick={nextStep}
@@ -325,6 +364,55 @@ const BusinessSignup = () => {
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Secondary Brands Section - NEW */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700">
+                      Brand Secondari (Opzionale)
+                      <span className="text-xs text-gray-500 block">
+                        Se hai più brand, aggiungili qui
+                      </span>
+                    </label>
+                    
+                    <div className="flex space-x-2">
+                      <Input
+                        type="text"
+                        placeholder="Es. Olio del Contadino"
+                        value={newBrand}
+                        onChange={(e) => setNewBrand(e.target.value)}
+                        className="flex-1 rounded-xl border-green-200 focus:border-green-400"
+                        onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSecondaryBrand())}
+                      />
+                      <Button
+                        type="button"
+                        onClick={addSecondaryBrand}
+                        variant="outline"
+                        className="border-green-200 hover:bg-green-50"
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
+
+                    {formData.secondaryBrands.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {formData.secondaryBrands.map((brand, index) => (
+                          <div
+                            key={index}
+                            className="bg-green-50 border border-green-200 px-3 py-1 rounded-full flex items-center space-x-2"
+                          >
+                            <span className="text-sm text-green-700">{brand}</span>
+                            <button
+                              type="button"
+                              onClick={() => removeSecondaryBrand(brand)}
+                              className="text-green-600 hover:text-green-800"
+                            >
+                              <X className="h-3 w-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
