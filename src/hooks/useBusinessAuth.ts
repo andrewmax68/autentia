@@ -37,7 +37,6 @@ export const useBusinessAuth = () => {
   useEffect(() => {
     console.log('useBusinessAuth - Setting up auth listener');
     
-    // Set up auth state listener FIRST
     const { data: { subscription } } = authService.onAuthStateChange(
       async (event, session) => {
         console.log('useBusinessAuth - Auth state changed:', event, session?.user?.email);
@@ -45,14 +44,13 @@ export const useBusinessAuth = () => {
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Handle business data loading
-        if (session?.user && event === 'SIGNED_IN') {
+        if (session?.user) {
           console.log('useBusinessAuth - User signed in, loading business data...');
           setTimeout(async () => {
-            await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
+            await loadBusinessData(session.user);
           }, 0);
         } else {
-          console.log('useBusinessAuth - No user or not signed in, clearing business data');
+          console.log('useBusinessAuth - No user, clearing business data');
           setBusiness(null);
         }
         
@@ -60,7 +58,6 @@ export const useBusinessAuth = () => {
       }
     );
 
-    // THEN check for existing session
     authService.getSession().then((session) => {
       console.log('useBusinessAuth - Initial session check:', session?.user?.email);
       
@@ -70,7 +67,7 @@ export const useBusinessAuth = () => {
       if (session?.user) {
         console.log('useBusinessAuth - Found existing session, loading business data...');
         setTimeout(async () => {
-          await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
+          await loadBusinessData(session.user);
         }, 0);
       }
       
@@ -83,49 +80,30 @@ export const useBusinessAuth = () => {
     };
   }, []);
 
-  const loadBusinessData = async (userId: string, userMetadata: any, userEmail: string | undefined) => {
+  const loadBusinessData = async (user: User) => {
     try {
-      console.log('useBusinessAuth - Loading business data for user:', userId, 'email:', userEmail);
+      console.log('useBusinessAuth - Loading business data for user:', user.id, 'email:', user.email);
       
-      // Prima prova a cercare per user_id
-      let businessData = await businessService.getBusinessByUserId(userId);
-      console.log('useBusinessAuth - Business data from database (by user_id):', businessData);
+      // Prima cerca per user_id
+      let businessData = await businessService.getBusinessByUserId(user.id);
       
-      // Se non trova per user_id, prova per email
-      if (!businessData && userEmail) {
-        console.log('useBusinessAuth - Trying to find business by email:', userEmail);
-        businessData = await businessService.getBusinessByEmail(userEmail);
-        console.log('useBusinessAuth - Business data from database (by email):', businessData);
+      // Se non trova per user_id, cerca per email
+      if (!businessData && user.email) {
+        console.log('useBusinessAuth - Trying to find business by email:', user.email);
+        businessData = await businessService.getBusinessByEmail(user.email);
         
-        // Se trova per email ma non ha user_id, aggiorniamo il record
-        if (businessData && !businessData.user_id) {
-          console.log('useBusinessAuth - Updating business user_id');
-          const { error } = await supabase
-            .from('businesses')
-            .update({ user_id: userId })
-            .eq('id', businessData.id);
-            
-          if (error) {
-            console.error('useBusinessAuth - Error updating business user_id:', error);
-          } else {
-            console.log('useBusinessAuth - Business user_id updated successfully');
-            businessData.user_id = userId;
-          }
+        // Se trova per email, collega il business all'utente
+        if (businessData) {
+          console.log('useBusinessAuth - Found business by email, linking to user');
+          businessData = await businessService.linkBusinessToUser(businessData.id, user.id);
         }
-      }
-      
-      // Se non trova nulla e ha metadati, prova a creare
-      if (!businessData && userMetadata && userEmail && userMetadata.business_name) {
-        console.log('useBusinessAuth - No business found, creating from metadata');
-        businessData = await businessService.createBusinessFromMetadata(userId, userMetadata, userEmail);
-        console.log('useBusinessAuth - Created business from metadata:', businessData);
       }
 
       if (businessData) {
         console.log('useBusinessAuth - Business data loaded successfully:', businessData.business_name);
         setBusiness(businessData);
       } else {
-        console.error('useBusinessAuth - No business data found for user:', userId, 'email:', userEmail);
+        console.log('useBusinessAuth - No business found for user');
         setBusiness(null);
       }
     } catch (error) {

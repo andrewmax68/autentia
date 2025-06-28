@@ -14,7 +14,6 @@ export const businessService = {
 
     if (error) {
       console.error('businessService - Error fetching business by user_id:', error);
-      return null;
     }
 
     if (businessData) {
@@ -22,7 +21,7 @@ export const businessService = {
       return businessData;
     }
 
-    console.log('businessService - No business found by user_id, trying by email...');
+    console.log('businessService - No business found by user_id');
     return null;
   },
 
@@ -37,7 +36,6 @@ export const businessService = {
 
     if (error) {
       console.error('businessService - Error fetching business by email:', error);
-      return null;
     }
 
     if (businessData) {
@@ -49,34 +47,22 @@ export const businessService = {
     return null;
   },
 
-  async createBusinessFromMetadata(userId: string, userMetadata: any, userEmail: string): Promise<Business | null> {
-    console.log('businessService - Creating business profile from metadata');
+  async linkBusinessToUser(businessId: string, userId: string): Promise<Business | null> {
+    console.log('businessService - Linking business to user:', businessId, userId);
     
-    const { data: newBusiness, error: createError } = await supabase
+    const { data: updatedBusiness, error } = await supabase
       .from('businesses')
-      .insert({
-        user_id: userId,
-        business_name: userMetadata.business_name,
-        owner_name: userMetadata.owner_name,
-        email: userEmail,
-        phone: userMetadata.phone,
-        category: userMetadata.category,
-        region: userMetadata.region,
-        description: userMetadata.description,
-        website: userMetadata.website,
-        primary_brand: userMetadata.primary_brand,
-        secondary_brands: userMetadata.secondary_brands || [],
-        is_verified: false
-      })
+      .update({ user_id: userId })
+      .eq('id', businessId)
       .select()
       .single();
 
-    if (createError) {
-      console.error('businessService - Error creating business:', createError);
+    if (error) {
+      console.error('businessService - Error linking business to user:', error);
       return null;
     }
 
-    console.log('businessService - Business created:', newBusiness);
-    return newBusiness;
+    console.log('businessService - Business linked successfully:', updatedBusiness);
+    return updatedBusiness;
   }
 };
