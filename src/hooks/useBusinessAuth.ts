@@ -1,9 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
 import { businessService } from '@/services/businessService';
 import { Business } from '@/types/business';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BusinessFormData {
   businessName: string;
@@ -85,12 +85,37 @@ export const useBusinessAuth = () => {
 
   const loadBusinessData = async (userId: string, userMetadata: any, userEmail: string | undefined) => {
     try {
-      console.log('useBusinessAuth - Loading business data for user:', userId);
+      console.log('useBusinessAuth - Loading business data for user:', userId, 'email:', userEmail);
       
+      // Prima prova a cercare per user_id
       let businessData = await businessService.getBusinessByUserId(userId);
-      console.log('useBusinessAuth - Business data from database:', businessData);
+      console.log('useBusinessAuth - Business data from database (by user_id):', businessData);
       
-      if (!businessData && userMetadata && userEmail) {
+      // Se non trova per user_id, prova per email
+      if (!businessData && userEmail) {
+        console.log('useBusinessAuth - Trying to find business by email:', userEmail);
+        businessData = await businessService.getBusinessByEmail(userEmail);
+        console.log('useBusinessAuth - Business data from database (by email):', businessData);
+        
+        // Se trova per email ma non ha user_id, aggiorniamo il record
+        if (businessData && !businessData.user_id) {
+          console.log('useBusinessAuth - Updating business user_id');
+          const { error } = await supabase
+            .from('businesses')
+            .update({ user_id: userId })
+            .eq('id', businessData.id);
+            
+          if (error) {
+            console.error('useBusinessAuth - Error updating business user_id:', error);
+          } else {
+            console.log('useBusinessAuth - Business user_id updated successfully');
+            businessData.user_id = userId;
+          }
+        }
+      }
+      
+      // Se non trova nulla e ha metadati, prova a creare
+      if (!businessData && userMetadata && userEmail && userMetadata.business_name) {
         console.log('useBusinessAuth - No business found, creating from metadata');
         businessData = await businessService.createBusinessFromMetadata(userId, userMetadata, userEmail);
         console.log('useBusinessAuth - Created business from metadata:', businessData);
@@ -100,7 +125,7 @@ export const useBusinessAuth = () => {
         console.log('useBusinessAuth - Business data loaded successfully:', businessData.business_name);
         setBusiness(businessData);
       } else {
-        console.error('useBusinessAuth - No business data found');
+        console.error('useBusinessAuth - No business data found for user:', userId, 'email:', userEmail);
         setBusiness(null);
       }
     } catch (error) {

@@ -4,25 +4,53 @@ import { Business } from '@/types/business';
 
 export const businessService = {
   async getBusinessByUserId(userId: string): Promise<Business | null> {
-    console.log('useBusinessAuth - Email confirmed, fetching business data');
+    console.log('businessService - Fetching business for user ID:', userId);
     
     const { data: businessData, error } = await supabase
       .from('businesses')
       .select('*')
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
-      console.error('useBusinessAuth - Error fetching business:', error);
+      console.error('businessService - Error fetching business by user_id:', error);
       return null;
     }
 
-    console.log('useBusinessAuth - Business found:', businessData);
-    return businessData;
+    if (businessData) {
+      console.log('businessService - Business found by user_id:', businessData);
+      return businessData;
+    }
+
+    console.log('businessService - No business found by user_id, trying by email...');
+    return null;
+  },
+
+  async getBusinessByEmail(email: string): Promise<Business | null> {
+    console.log('businessService - Fetching business for email:', email);
+    
+    const { data: businessData, error } = await supabase
+      .from('businesses')
+      .select('*')
+      .eq('email', email)
+      .maybeSingle();
+
+    if (error) {
+      console.error('businessService - Error fetching business by email:', error);
+      return null;
+    }
+
+    if (businessData) {
+      console.log('businessService - Business found by email:', businessData);
+      return businessData;
+    }
+
+    console.log('businessService - No business found by email');
+    return null;
   },
 
   async createBusinessFromMetadata(userId: string, userMetadata: any, userEmail: string): Promise<Business | null> {
-    console.log('useBusinessAuth - Creating business profile from metadata');
+    console.log('businessService - Creating business profile from metadata');
     
     const { data: newBusiness, error: createError } = await supabase
       .from('businesses')
@@ -44,11 +72,11 @@ export const businessService = {
       .single();
 
     if (createError) {
-      console.error('useBusinessAuth - Error creating business:', createError);
+      console.error('businessService - Error creating business:', createError);
       return null;
     }
 
-    console.log('useBusinessAuth - Business created:', newBusiness);
+    console.log('businessService - Business created:', newBusiness);
     return newBusiness;
   }
 };
