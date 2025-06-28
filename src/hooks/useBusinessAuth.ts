@@ -19,6 +19,23 @@ interface Business {
   is_verified: boolean;
 }
 
+export interface BusinessFormData {
+  businessName: string;
+  ownerName: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+  phone: string;
+  category: string;
+  region: string;
+  description: string;
+  website: string;
+  primaryBrand: string;
+  secondaryBrands: string[];
+  logo: File | null;
+  acceptTerms: boolean;
+}
+
 export const useBusinessAuth = () => {
   const [user, setUser] = useState<User | null>(null);
   const [business, setBusiness] = useState<Business | null>(null);
@@ -47,6 +64,36 @@ export const useBusinessAuth = () => {
     setIsLoading(false);
   }, []);
 
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      // Per ora forza il login senza chiamare il servizio
+      console.log('Login forzato per test:', email);
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      console.error('Login error:', error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const signUp = async (formData: BusinessFormData) => {
+    setIsLoading(true);
+    try {
+      // Per ora forza la registrazione senza chiamare il servizio
+      console.log('SignUp forzato per test:', formData.email);
+      setIsAuthenticated(true);
+      return { success: true };
+    } catch (error) {
+      console.error('SignUp error:', error);
+      return { success: false, error };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setBusiness(null);
@@ -58,6 +105,8 @@ export const useBusinessAuth = () => {
     business,
     isLoading,
     isAuthenticated,
+    login,
+    signUp,
     logout
   };
 };
