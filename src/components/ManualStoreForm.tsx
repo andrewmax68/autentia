@@ -20,7 +20,7 @@ interface StoreFormData {
 }
 
 interface ManualStoreFormProps {
-  onStoreAdded?: (store: StoreFormData & { latitude?: number; longitude?: number }) => void;
+  onStoreAdded?: (store: StoreFormData & { latitude?: number; longitude?: number; services?: string[] }) => void;
 }
 
 const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
@@ -65,7 +65,7 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
         ...formData,
         latitude,
         longitude,
-        services: formData.services ? formData.services.split(',').map(s => s.trim()) : undefined
+        services: formData.services ? formData.services.split(',').map(s => s.trim()) : []
       };
 
       if (onStoreAdded) {
