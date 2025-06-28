@@ -1,6 +1,7 @@
 
 export interface Business {
   id: string;
+  user_id: string;
   business_name: string;
   owner_name: string;
   email: string;
