@@ -43,9 +43,9 @@ export const useBusinessAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(true); // Forza autenticazione per test
 
   useEffect(() => {
-    // Crea un business di test per permettere l'accesso alla dashboard
+    // Crea un business di test con UUID valido per permettere l'accesso alla dashboard
     const testBusiness: Business = {
-      id: 'test-business-id',
+      id: '550e8400-e29b-41d4-a716-446655440000', // UUID valido per test
       business_name: 'Terra delle Marche',
       owner_name: 'Test Owner',
       email: 'direzione@terradellemarche.it',

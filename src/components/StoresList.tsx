@@ -92,8 +92,6 @@ const StoresList = ({ businessId }: StoresListProps) => {
         ...editData,
         services: Array.isArray(editData.services) 
           ? editData.services
-          : typeof editData.services === 'string' 
-          ? editData.services.split(',').map(s => s.trim()).filter(s => s)
           : []
       };
 
