@@ -34,6 +34,8 @@ const BrandSearch = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [mapBounds, setMapBounds] = useState<LatLngBounds | null>(null);
+  const [exactBrandName, setExactBrandName] = useState<string>('');
+  const [brandLogo, setBrandLogo] = useState<string | null>(null);
 
   useEffect(() => {
     const brandParam = searchParams.get('brand');
@@ -62,12 +64,19 @@ const BrandSearch = () => {
       if (error) {
         console.error('Error searching stores:', error);
         setStores([]);
+        setExactBrandName('');
+        setBrandLogo(null);
       } else {
         console.log('Found stores:', data);
         setStores(data || []);
         
-        // Calculate map bounds
+        // Get the exact brand name and logo from the first store found
         if (data && data.length > 0) {
+          const firstStore = data[0];
+          setExactBrandName(firstStore.brand || firstStore.business_name || term);
+          setBrandLogo(firstStore.logo_url);
+          
+          // Calculate map bounds
           const validStores = data.filter(store => 
             store.latitude !== null && store.longitude !== null
           );
@@ -82,11 +91,16 @@ const BrandSearch = () => {
             });
             setMapBounds(bounds);
           }
+        } else {
+          setExactBrandName(term);
+          setBrandLogo(null);
         }
       }
     } catch (error) {
       console.error('Search error:', error);
       setStores([]);
+      setExactBrandName('');
+      setBrandLogo(null);
     } finally {
       setIsLoading(false);
     }
@@ -133,10 +147,19 @@ const BrandSearch = () => {
       <div className="flex-1">
         {hasSearched && (
           <div className="container mx-auto px-4 py-4">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold">
-                Risultati per "{brandSearch}" ({stores.length} punti vendita trovati)
-              </h2>
+            <div className="mb-4 flex items-center gap-4">
+              {brandLogo && (
+                <img 
+                  src={brandLogo} 
+                  alt={exactBrandName}
+                  className="h-12 w-12 object-contain rounded-lg border"
+                />
+              )}
+              <div>
+                <h2 className="text-xl font-semibold">
+                  Risultati per "{exactBrandName}" ({stores.length} punti vendita trovati)
+                </h2>
+              </div>
             </div>
           </div>
         )}
@@ -180,8 +203,19 @@ const BrandSearch = () => {
                   >
                     <Popup>
                       <div className="p-2">
-                        <h3 className="font-semibold text-lg">{store.store_name}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{store.brand}</p>
+                        <div className="flex items-center gap-3 mb-2">
+                          {store.logo_url && (
+                            <img 
+                              src={store.logo_url} 
+                              alt={store.brand}
+                              className="h-8 w-8 object-contain rounded"
+                            />
+                          )}
+                          <div>
+                            <h3 className="font-semibold text-lg">{store.store_name}</h3>
+                            <p className="text-sm text-green-600 font-medium">{store.brand}</p>
+                          </div>
+                        </div>
                         <p className="text-sm mb-1">
                           <strong>Indirizzo:</strong> {store.address}, {store.city}
                         </p>
