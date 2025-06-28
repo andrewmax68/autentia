@@ -6,9 +6,10 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import StoreUploader from "@/components/StoreUploader";
 import ProducerLinkGenerator from "@/components/ProducerLinkGenerator";
+import ManualStoreForm from "@/components/ManualStoreForm";
+import StoresList from "@/components/StoresList";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import ManualStoreForm from "@/components/ManualStoreForm";
 
 interface StoreData {
   nomeNegozio: string;
@@ -28,7 +29,7 @@ const BusinessDashboard = () => {
   
   const { business, logout, isAuthenticated, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'manual' | 'links'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'stores' | 'manual' | 'manage' | 'links'>('overview');
   const { toast } = useToast();
 
   console.log('BusinessDashboard - State:', { business, isAuthenticated, isLoading });
@@ -186,11 +187,11 @@ const BusinessDashboard = () => {
 
       {/* Navigation Tabs */}
       <div className="container mx-auto px-4 py-6">
-        <div className="flex space-x-1 mb-6">
+        <div className="flex space-x-1 mb-6 overflow-x-auto">
           <Button
             variant={activeTab === 'overview' ? 'default' : 'outline'}
             onClick={() => setActiveTab('overview')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap"
           >
             <Building2 className="h-4 w-4" />
             Panoramica
@@ -198,7 +199,7 @@ const BusinessDashboard = () => {
           <Button
             variant={activeTab === 'stores' ? 'default' : 'outline'}
             onClick={() => setActiveTab('stores')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap"
           >
             <Store className="h-4 w-4" />
             Carica File CSV
@@ -206,15 +207,23 @@ const BusinessDashboard = () => {
           <Button
             variant={activeTab === 'manual' ? 'default' : 'outline'}
             onClick={() => setActiveTab('manual')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap"
           >
             <Plus className="h-4 w-4" />
             Aggiungi Manualmente
           </Button>
           <Button
+            variant={activeTab === 'manage' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('manage')}
+            className="flex items-center gap-2 whitespace-nowrap"
+          >
+            <MapPin className="h-4 w-4" />
+            Gestisci Punti Vendita
+          </Button>
+          <Button
             variant={activeTab === 'links' ? 'default' : 'outline'}
             onClick={() => setActiveTab('links')}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 whitespace-nowrap"
           >
             <Link className="h-4 w-4" />
             Link e Condivisione
@@ -394,6 +403,13 @@ const BusinessDashboard = () => {
         {activeTab === 'manual' && (
           <div>
             <ManualStoreForm onStoreAdded={handleManualStoreAdded} />
+          </div>
+        )}
+
+        {/* Manage Stores Tab */}
+        {activeTab === 'manage' && business && (
+          <div>
+            <StoresList businessId={business.id} />
           </div>
         )}
 
