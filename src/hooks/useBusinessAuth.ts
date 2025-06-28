@@ -22,17 +22,16 @@ export const useBusinessAuth = () => {
         console.log('useBusinessAuth - Current session:', session);
         
         if (session?.user) {
-          console.log('useBusinessAuth - User found, checking if email is confirmed');
-          console.log('useBusinessAuth - Email confirmed at:', session.user.email_confirmed_at);
+          console.log('useBusinessAuth - User found');
           
-          // Check if user email is confirmed
-          if (!session.user.email_confirmed_at) {
-            console.log('useBusinessAuth - Email not confirmed yet');
-            setIsAuthenticated(false);
-            setBusiness(null);
-            setIsLoading(false);
-            return;
-          }
+          // Per ora, accettiamo anche utenti non confermati per testing
+          // if (!session.user.email_confirmed_at) {
+          //   console.log('useBusinessAuth - Email not confirmed yet');
+          //   setIsAuthenticated(false);
+          //   setBusiness(null);
+          //   setIsLoading(false);
+          //   return;
+          // }
           
           // Fetch real business data from database
           let businessData = await businessService.getBusinessByUserId(session.user.id);
@@ -98,13 +97,23 @@ export const useBusinessAuth = () => {
       if (authData.user) {
         toast({
           title: "Registrazione completata!",
-          description: "Controlla la tua email per verificare l'account. Una volta verificato, potrai accedere alla dashboard.",
+          description: "Account creato con successo. Ora puoi effettuare il login.",
         });
 
         return { success: true };
       }
     } catch (error: any) {
       console.error('Signup error:', error);
+      
+      // Se l'utente esiste già, non è un errore fatale
+      if (error.message?.includes('User already registered')) {
+        toast({
+          title: "Account già esistente",
+          description: "Questo account esiste già. Prova ad effettuare il login.",
+        });
+        return { success: true };
+      }
+      
       toast({
         title: "Errore durante la registrazione",
         description: error.message,
@@ -126,19 +135,18 @@ export const useBusinessAuth = () => {
 
       if (data.user) {
         console.log('useBusinessAuth - User logged in:', data.user);
-        console.log('useBusinessAuth - Email confirmed at:', data.user.email_confirmed_at);
         
-        // Check if email is confirmed
-        if (!data.user.email_confirmed_at) {
-          console.log('useBusinessAuth - Email not confirmed');
-          toast({
-            title: "Email non confermata",
-            description: "Controlla la tua email e clicca sul link di conferma prima di accedere.",
-            variant: "destructive",
-          });
-          await authService.logout();
-          return { success: false, error: "Email non confermata" };
-        }
+        // Per ora, accettiamo anche utenti non confermati per testing
+        // if (!data.user.email_confirmed_at) {
+        //   console.log('useBusinessAuth - Email not confirmed');
+        //   toast({
+        //     title: "Email non confermata",
+        //     description: "Controlla la tua email e clicca sul link di conferma prima di accedere.",
+        //     variant: "destructive",
+        //   });
+        //   await authService.logout();
+        //   return { success: false, error: "Email non confermata" };
+        // }
 
         // Fetch business data after login
         let businessData = await businessService.getBusinessByUserId(data.user.id);
@@ -174,7 +182,7 @@ export const useBusinessAuth = () => {
       // Provide more specific error messages
       let errorMessage = error.message;
       if (error.message === "Invalid login credentials") {
-        errorMessage = "Email o password incorretti. Verifica i tuoi dati di accesso.";
+        errorMessage = "Email o password incorretti. Assicurati di aver registrato l'account prima.";
       }
       
       toast({

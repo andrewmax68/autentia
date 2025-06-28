@@ -36,13 +36,6 @@ export const authService = {
 
   async login(email: string, password: string) {
     console.log('authService - Starting login process for:', email);
-    console.log('authService - Password length:', password.length);
-    console.log('authService - Full login attempt details:', {
-      email,
-      passwordProvided: !!password,
-      passwordLength: password.length,
-      timestamp: new Date().toISOString()
-    });
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -51,50 +44,10 @@ export const authService = {
 
     if (error) {
       console.error('authService - Login error:', error);
-      console.error('authService - Error details:', {
-        message: error.message,
-        status: error.status,
-        code: error.code || 'no_code',
-        name: error.name || 'no_name'
-      });
-      
-      // Tenta di ottenere più informazioni sull'errore
-      if (error.message === 'Invalid login credentials') {
-        console.log('authService - Checking if user exists in auth...');
-        try {
-          // Verifica se l'utente esiste controllando la tabella businesses
-          const { data: businessData, error: businessError } = await supabase
-            .from('businesses')
-            .select('email, business_name, is_verified')
-            .eq('email', email)
-            .single();
-
-          if (businessData) {
-            console.log('authService - User exists in businesses table:', businessData);
-          } else {
-            console.log('authService - User not found in businesses table');
-          }
-          
-          if (businessError) {
-            console.log('authService - Business query error:', businessError);
-          }
-        } catch (debugError) {
-          console.error('authService - Debug error:', debugError);
-        }
-      }
-      
       throw error;
     }
 
     console.log('authService - Login successful:', data);
-    console.log('authService - User details:', {
-      id: data.user?.id,
-      email: data.user?.email,
-      email_confirmed_at: data.user?.email_confirmed_at,
-      created_at: data.user?.created_at,
-      last_sign_in_at: data.user?.last_sign_in_at
-    });
-    
     return data;
   },
 
@@ -119,33 +72,40 @@ export const authService = {
     return supabase.auth.onAuthStateChange(callback);
   },
 
-  // Nuova funzione per debug
-  async debugUserAccount(email: string) {
-    console.log('authService - Debug account for:', email);
+  async resendConfirmation(email: string) {
+    console.log('authService - Resending confirmation email for:', email);
     
-    try {
-      // Controlla se l'utente esiste nella tabella businesses
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('*')
-        .eq('email', email)
-        .single();
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email: email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/business-dashboard`
+      }
+    });
 
-      console.log('authService - Business data:', businessData);
-      console.log('authService - Business error:', businessError);
-
-      return {
-        businessExists: !!businessData,
-        businessData,
-        businessError
-      };
-    } catch (error) {
-      console.error('authService - Debug error:', error);
-      return {
-        businessExists: false,
-        businessData: null,
-        businessError: error
-      };
+    if (error) {
+      console.error('authService - Resend confirmation error:', error);
+      throw error;
     }
+
+    console.log('authService - Confirmation email resent successfully');
+  },
+
+  async confirmUser(token: string, email: string) {
+    console.log('authService - Confirming user manually');
+    
+    const { data, error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: 'email'
+    });
+
+    if (error) {
+      console.error('authService - Confirmation error:', error);
+      throw error;
+    }
+
+    console.log('authService - User confirmed successfully:', data);
+    return data;
   }
 };

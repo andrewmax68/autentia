@@ -1,19 +1,19 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MapPin, Mail, Lock, Building2, ArrowRight, AlertCircle } from "lucide-react";
+import { MapPin, Mail, Lock, Building2, ArrowRight, AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useBusinessAuth } from "@/hooks/useBusinessAuth";
-import { supabase } from "@/integrations/supabase/client";
+import { authService } from "@/services/authService";
 import { useToast } from "@/hooks/use-toast";
 
 const BusinessLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [isResendingEmail, setIsResendingEmail] = useState(false);
   const { login, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -29,87 +29,33 @@ const BusinessLogin = () => {
     }
   };
 
-  const handlePasswordReset = async () => {
+  const handleResendConfirmation = async () => {
     if (!email) {
       toast({
         title: "Email richiesta",
-        description: "Inserisci la tua email per resettare la password",
+        description: "Inserisci la tua email per reinviare la conferma",
         variant: "destructive",
       });
       return;
     }
 
-    setIsResettingPassword(true);
+    setIsResendingEmail(true);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/business-login`,
-      });
-
-      if (error) {
-        console.error('Password reset error:', error);
-        toast({
-          title: "Errore reset password",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Email inviata!",
-          description: "Controlla la tua email per il link di reset della password",
-        });
-      }
-    } catch (error) {
-      console.error('Password reset error:', error);
+      await authService.resendConfirmation(email);
       toast({
-        title: "Errore",
-        description: "Si è verificato un errore durante il reset della password",
+        title: "Email di conferma inviata!",
+        description: "Controlla la tua casella email (anche lo spam) per il link di conferma",
+      });
+    } catch (error: any) {
+      console.error('Resend confirmation error:', error);
+      toast({
+        title: "Errore invio email",
+        description: error.message || "Si è verificato un errore durante l'invio",
         variant: "destructive",
       });
     } finally {
-      setIsResettingPassword(false);
-    }
-  };
-
-  const handleDebugAccount = async () => {
-    if (!email) {
-      toast({
-        title: "Email richiesta",
-        description: "Inserisci la tua email per verificare l'account",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      // Verifica se l'account esiste controllando la tabella businesses
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('*')
-        .eq('email', email)
-        .single();
-
-      console.log('Debug - Business data:', businessData);
-      console.log('Debug - Business error:', businessError);
-
-      if (businessError && businessError.code !== 'PGRST116') {
-        console.error('Error checking business:', businessError);
-      }
-
-      toast({
-        title: "Debug info",
-        description: businessData 
-          ? `Account trovato: ${businessData.business_name} - Verificato: ${businessData.is_verified}`
-          : "Account non trovato nella tabella businesses",
-      });
-
-    } catch (error) {
-      console.error('Debug error:', error);
-      toast({
-        title: "Errore debug",
-        description: "Errore durante la verifica dell'account",
-        variant: "destructive",
-      });
+      setIsResendingEmail(false);
     }
   };
 
@@ -193,14 +139,6 @@ const BusinessLogin = () => {
                   <input type="checkbox" className="rounded border-gray-300" />
                   <span>Ricordami</span>
                 </label>
-                <button 
-                  type="button"
-                  onClick={handlePasswordReset}
-                  disabled={isResettingPassword}
-                  className="text-green-600 hover:text-green-700 font-medium"
-                >
-                  {isResettingPassword ? "Invio..." : "Password dimenticata?"}
-                </button>
               </div>
 
               <Button
@@ -219,16 +157,40 @@ const BusinessLogin = () => {
               </Button>
             </form>
 
-            {/* Debug Button */}
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleDebugAccount}
-              className="w-full rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
-            >
-              <AlertCircle className="mr-2 h-4 w-4" />
-              Verifica Account (Debug)
-            </Button>
+            {/* Email Confirmation Helper */}
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-200">
+              <div className="flex items-start space-x-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                <div className="flex-1">
+                  <h4 className="text-sm font-medium text-blue-900 mb-1">
+                    Non hai ricevuto l'email di conferma?
+                  </h4>
+                  <p className="text-sm text-blue-700 mb-3">
+                    Se hai appena registrato l'account, potrebbe essere necessario confermare l'email.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResendConfirmation}
+                    disabled={isResendingEmail}
+                    className="text-blue-700 border-blue-300 hover:bg-blue-100"
+                  >
+                    {isResendingEmail ? (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        Invio in corso...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Reinvia Email di Conferma
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </div>
 
             <div className="relative">
               <Separator className="my-6" />
@@ -261,7 +223,7 @@ const BusinessLogin = () => {
                 onClick={() => handleSocialLogin('facebook')}
               >
                 <svg className="w-4 h-4 mr-2" fill="#1877F2" viewBox="0 0 24 24">
-                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                  <path d="M24 12.073c0-6.627-5.373-12-12-5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
                 </svg>
                 Continua con Facebook
               </Button>
