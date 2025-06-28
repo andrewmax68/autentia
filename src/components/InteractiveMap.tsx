@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -150,14 +149,16 @@ const InteractiveMap = ({ stores, className = "" }: InteractiveMapProps) => {
       <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded shadow-sm">
         <span className="text-xs text-gray-600">{stores.length} punti vendita</span>
       </div>
-      <style jsx>{`
+      <style>
+        {`
         .custom-popup .leaflet-popup-content {
           margin: 0;
         }
         .custom-popup .leaflet-popup-content-wrapper {
           border-radius: 8px;
         }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
