@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { MapPin, Building2, ArrowRight } from "lucide-react";
@@ -197,14 +196,26 @@ const BusinessSignup = () => {
                       <SelectValue placeholder="Seleziona regione" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Lombardia">Lombardia</SelectItem>
-                      <SelectItem value="Lazio">Lazio</SelectItem>
+                      <SelectItem value="Abruzzo">Abruzzo</SelectItem>
+                      <SelectItem value="Basilicata">Basilicata</SelectItem>
+                      <SelectItem value="Calabria">Calabria</SelectItem>
                       <SelectItem value="Campania">Campania</SelectItem>
-                      <SelectItem value="Sicilia">Sicilia</SelectItem>
-                      <SelectItem value="Veneto">Veneto</SelectItem>
-                      <SelectItem value="Toscana">Toscana</SelectItem>
-                      <SelectItem value="Piemonte">Piemonte</SelectItem>
                       <SelectItem value="Emilia-Romagna">Emilia-Romagna</SelectItem>
+                      <SelectItem value="Friuli-Venezia Giulia">Friuli-Venezia Giulia</SelectItem>
+                      <SelectItem value="Lazio">Lazio</SelectItem>
+                      <SelectItem value="Liguria">Liguria</SelectItem>
+                      <SelectItem value="Lombardia">Lombardia</SelectItem>
+                      <SelectItem value="Marche">Marche</SelectItem>
+                      <SelectItem value="Molise">Molise</SelectItem>
+                      <SelectItem value="Piemonte">Piemonte</SelectItem>
+                      <SelectItem value="Puglia">Puglia</SelectItem>
+                      <SelectItem value="Sardegna">Sardegna</SelectItem>
+                      <SelectItem value="Sicilia">Sicilia</SelectItem>
+                      <SelectItem value="Toscana">Toscana</SelectItem>
+                      <SelectItem value="Trentino-Alto Adige">Trentino-Alto Adige</SelectItem>
+                      <SelectItem value="Umbria">Umbria</SelectItem>
+                      <SelectItem value="Valle d'Aosta">Valle d'Aosta</SelectItem>
+                      <SelectItem value="Veneto">Veneto</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
