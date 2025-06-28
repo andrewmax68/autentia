@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { MapPin, ArrowLeft, Building2, Phone, Globe, ExternalLink } from "lucide-react";
@@ -40,7 +39,7 @@ const ProducerMapPage = () => {
       try {
         console.log('Fetching stores for slug:', slug);
         
-        // First try to get business info from businesses table
+        // Convert slug to business name (remove hyphens and capitalize)
         const businessName = slug
           .split('-')
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
@@ -53,14 +52,14 @@ const ProducerMapPage = () => {
           .from('businesses')
           .select('*')
           .ilike('business_name', `%${businessName}%`)
-          .limit(1)
-          .single();
+          .maybeSingle();
 
-        if (businessError && businessError.code !== 'PGRST116') {
+        if (businessError) {
           console.error('Error fetching business:', businessError);
         }
 
         if (businessData) {
+          console.log('Business found:', businessData);
           setBusiness(businessData);
           
           // Now get stores for this business
@@ -76,9 +75,19 @@ const ProducerMapPage = () => {
           }
 
           console.log('Stores data:', storesData);
-          setStores(storesData?.filter(store => store.latitude && store.longitude) || []);
+          
+          // Map the stores data to include business_name
+          const mappedStores = storesData?.map(store => ({
+            ...store,
+            business_name: businessData.business_name,
+            category: businessData.category,
+            logo_url: businessData.logo_url
+          })).filter(store => store.latitude && store.longitude) || [];
+          
+          setStores(mappedStores as Store[]);
         } else {
           // Fallback: try to find stores using public_stores view
+          console.log('Business not found, trying public_stores fallback');
           const { data: publicStoresData, error: publicStoresError } = await supabase
             .from('public_stores')
             .select('*')
@@ -89,8 +98,11 @@ const ProducerMapPage = () => {
             throw publicStoresError;
           }
 
+          console.log('Public stores data:', publicStoresData);
+
           if (publicStoresData && publicStoresData.length > 0) {
-            setStores(publicStoresData.filter(store => store.latitude && store.longitude) as Store[]);
+            const filteredStores = publicStoresData.filter(store => store.latitude && store.longitude);
+            setStores(filteredStores as Store[]);
             setBusiness({
               business_name: publicStoresData[0].business_name,
               category: publicStoresData[0].category,
@@ -150,7 +162,18 @@ const ProducerMapPage = () => {
             <p className="text-gray-600 mb-4">
               Non sono stati trovati punti vendita attivi per questo produttore.
             </p>
-            <Button asChild>
+            <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <p className="text-sm text-yellow-800">
+                <strong>Debug Info:</strong> Cercando slug: "{slug}"
+              </p>
+              <p className="text-sm text-yellow-700 mt-1">
+                Business found: {business ? 'Sì' : 'No'}
+              </p>
+              <p className="text-sm text-yellow-700">
+                Stores found: {stores.length}
+              </p>
+            </div>
+            <Button asChild className="mt-4">
               <Link to="/">Torna alla Home</Link>
             </Button>
           </CardContent>
