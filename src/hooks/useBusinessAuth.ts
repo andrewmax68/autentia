@@ -37,34 +37,55 @@ export interface Business {
 }
 
 export const useBusinessAuth = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [business, setBusiness] = useState<Business | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const { toast } = useToast();
 
+  console.log('useBusinessAuth - Hook initialized');
+
   // Check if user is logged in and get business data
   useEffect(() => {
+    console.log('useBusinessAuth - Effect running');
     const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        // Mock business data for now
-        const mockBusiness: Business = {
-          id: session.user.id,
-          company_name: "Pastificio del Borgo",
-          owner_name: "Mario Rossi",
-          email: session.user.email || "",
-          phone: "+39 333 123 4567",
-          category: "Alimentari",
-          region: "Toscana",
-          description: "Produzione artigianale di pasta fresca",
-          website: "https://pastificiobargo.it",
-          logo_url: null,
-          primary_brand: "Pasta del Borgo",
-          secondary_brands: ["Bio Pasta", "Pasta Premium"],
-          slug: "pastificio-del-borgo"
-        };
-        setBusiness(mockBusiness);
-        setIsAuthenticated(true);
+      try {
+        console.log('useBusinessAuth - Checking session...');
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('useBusinessAuth - Session:', session);
+        
+        if (session?.user) {
+          console.log('useBusinessAuth - User found, creating mock business');
+          // Mock business data for now
+          const mockBusiness: Business = {
+            id: session.user.id,
+            company_name: "Pastificio del Borgo",
+            owner_name: "Mario Rossi",
+            email: session.user.email || "",
+            phone: "+39 333 123 4567",
+            category: "Alimentari",
+            region: "Toscana",
+            description: "Produzione artigianale di pasta fresca",
+            website: "https://pastificiobargo.it",
+            logo_url: null,
+            primary_brand: "Pasta del Borgo",
+            secondary_brands: ["Bio Pasta", "Pasta Premium"],
+            slug: "pastificio-del-borgo"
+          };
+          setBusiness(mockBusiness);
+          setIsAuthenticated(true);
+          console.log('useBusinessAuth - Auth successful');
+        } else {
+          console.log('useBusinessAuth - No user session');
+          setIsAuthenticated(false);
+          setBusiness(null);
+        }
+      } catch (error) {
+        console.error('useBusinessAuth - Error checking auth:', error);
+        setIsAuthenticated(false);
+        setBusiness(null);
+      } finally {
+        setIsLoading(false);
+        console.log('useBusinessAuth - Loading finished');
       }
     };
 

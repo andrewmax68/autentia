@@ -1,27 +1,41 @@
 
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Upload, Store, BarChart3, Share2, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { useBusinessAuth } from "@/hooks/useBusinessAuth";
 import { useNavigate } from "react-router-dom";
-import StoreUploader from "@/components/StoreUploader";
-import ProducerLinkGenerator from "@/components/ProducerLinkGenerator";
 
 const BusinessDashboard = () => {
-  const { business, logout, isAuthenticated } = useBusinessAuth();
+  console.log('BusinessDashboard - Component rendering');
+  
+  const { business, logout, isAuthenticated, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+
+  console.log('BusinessDashboard - State:', { business, isAuthenticated, isLoading });
 
   const handleLogout = () => {
+    console.log('BusinessDashboard - Logout clicked');
     logout();
     navigate("/business-login");
   };
 
-  // Show loading state if auth is being checked
+  // Show loading state
+  if (isLoading) {
+    console.log('BusinessDashboard - Showing loading state');
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Caricamento...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login required if not authenticated
   if (!isAuthenticated) {
+    console.log('BusinessDashboard - Not authenticated, showing login prompt');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -34,7 +48,9 @@ const BusinessDashboard = () => {
     );
   }
 
+  // Show business not found if no business data
   if (!business) {
+    console.log('BusinessDashboard - No business data');
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -44,17 +60,7 @@ const BusinessDashboard = () => {
     );
   }
 
-  const mockStats = {
-    totalStores: 12,
-    activeStores: 10,
-    monthlyViews: 245,
-    weeklyGrowth: "+12%"
-  };
-
-  const handleStoresUploaded = (stores: any[]) => {
-    console.log("Stores uploaded:", stores);
-    // Here you would typically save to database
-  };
+  console.log('BusinessDashboard - Rendering main dashboard');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,115 +80,32 @@ const BusinessDashboard = () => {
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="overview">Panoramica</TabsTrigger>
-            <TabsTrigger value="stores">Punti Vendita</TabsTrigger>
-            <TabsTrigger value="analytics">Statistiche</TabsTrigger>
-            <TabsTrigger value="sharing">Condivisione</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Punti Vendita</CardTitle>
-                  <Store className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{mockStats.totalStores}</div>
-                  <p className="text-xs text-muted-foreground">
-                    {mockStats.activeStores} attivi
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Visualizzazioni</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{mockStats.monthlyViews}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Questo mese
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Crescita</CardTitle>
-                  <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{mockStats.weeklyGrowth}</div>
-                  <p className="text-xs text-muted-foreground">
-                    Ultima settimana
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Status</CardTitle>
-                  <Badge variant="default">Attivo</Badge>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-sm text-muted-foreground">
-                    Account verificato
-                  </div>
-                </CardContent>
-              </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Benvenuto nel tuo Dashboard</CardTitle>
+            <CardDescription>
+              Gestisci la tua presenza sui punti vendita
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="p-4 bg-green-50 rounded-lg">
+                <h3 className="font-medium text-green-800">Azienda: {business.company_name}</h3>
+                <p className="text-sm text-green-700">Proprietario: {business.owner_name}</p>
+                <p className="text-sm text-green-700">Email: {business.email}</p>
+                <p className="text-sm text-green-700">Categoria: {business.category}</p>
+                <p className="text-sm text-green-700">Regione: {business.region}</p>
+              </div>
+              
+              <div className="text-center py-8">
+                <p className="text-gray-600">Dashboard in sviluppo...</p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Presto potrai gestire i tuoi punti vendita e visualizzare le statistiche
+                </p>
+              </div>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Azioni Rapide</CardTitle>
-                <CardDescription>
-                  Gestisci i tuoi punti vendita e condividi la tua presenza
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-wrap gap-4">
-                <Button onClick={() => setActiveTab("stores")}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Carica Punti Vendita
-                </Button>
-                <Button variant="outline" onClick={() => setActiveTab("sharing")}>
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Genera Link e QR
-                </Button>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="stores">
-            <StoreUploader onStoresUploaded={handleStoresUploaded} />
-          </TabsContent>
-
-          <TabsContent value="analytics">
-            <Card>
-              <CardHeader>
-                <CardTitle>Statistiche Dettagliate</CardTitle>
-                <CardDescription>
-                  Analisi delle performance dei tuoi punti vendita
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center text-muted-foreground py-8">
-                  Statistiche dettagliate saranno disponibili a breve
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="sharing">
-            <ProducerLinkGenerator 
-              producerSlug={business.slug}
-              producerName={business.company_name}
-            />
-          </TabsContent>
-        </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
