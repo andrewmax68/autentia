@@ -1,5 +1,6 @@
 
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 const BusinessSection = () => {
   return (
@@ -13,9 +14,11 @@ const BusinessSection = () => {
         </div>
 
         <div className="text-center">
-          <Button className="bg-green-600 hover:bg-green-700">
-            Registrati come Produttore
-          </Button>
+          <Link to="/business-signup">
+            <Button className="bg-green-600 hover:bg-green-700">
+              Registrati come Produttore
+            </Button>
+          </Link>
         </div>
       </div>
     </section>

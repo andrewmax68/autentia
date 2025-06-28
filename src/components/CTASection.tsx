@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Search, Store } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const CTASection = () => {
   return (
@@ -12,10 +13,12 @@ const CTASection = () => {
             <Search className="mr-2 h-5 w-5" />
             Cerca Brand
           </Button>
-          <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-green-600">
-            <Store className="mr-2 h-5 w-5" />
-            Registra Negozio
-          </Button>
+          <Link to="/business-signup">
+            <Button size="lg" variant="outline" className="text-white border-white hover:bg-white hover:text-green-600">
+              <Store className="mr-2 h-5 w-5" />
+              Registra Negozio
+            </Button>
+          </Link>
         </div>
       </div>
     </section>
