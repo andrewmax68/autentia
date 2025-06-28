@@ -19,9 +19,11 @@ export const useBusinessAuth = () => {
     const checkAuth = async () => {
       try {
         const session = await authService.getSession();
+        console.log('useBusinessAuth - Current session:', session);
         
         if (session?.user) {
           console.log('useBusinessAuth - User found, checking if email is confirmed');
+          console.log('useBusinessAuth - Email confirmed at:', session.user.email_confirmed_at);
           
           // Check if user email is confirmed
           if (!session.user.email_confirmed_at) {
@@ -34,10 +36,12 @@ export const useBusinessAuth = () => {
           
           // Fetch real business data from database
           let businessData = await businessService.getBusinessByUserId(session.user.id);
+          console.log('useBusinessAuth - Business data from DB:', businessData);
 
           if (!businessData) {
             // Check if business data exists in user metadata (from signup)
             const userData = session.user.user_metadata;
+            console.log('useBusinessAuth - User metadata:', userData);
             if (userData && userData.business_name) {
               businessData = await businessService.createBusinessFromMetadata(
                 session.user.id,
@@ -49,6 +53,7 @@ export const useBusinessAuth = () => {
 
           setBusiness(businessData);
           setIsAuthenticated(true);
+          console.log('useBusinessAuth - Authentication successful, business:', businessData);
         } else {
           console.log('useBusinessAuth - No user session');
           setIsAuthenticated(false);
@@ -113,10 +118,16 @@ export const useBusinessAuth = () => {
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
+    console.log('useBusinessAuth - Starting login for:', email);
+    
     try {
       const data = await authService.login(email, password);
+      console.log('useBusinessAuth - Login response:', data);
 
       if (data.user) {
+        console.log('useBusinessAuth - User logged in:', data.user);
+        console.log('useBusinessAuth - Email confirmed at:', data.user.email_confirmed_at);
+        
         // Check if email is confirmed
         if (!data.user.email_confirmed_at) {
           console.log('useBusinessAuth - Email not confirmed');
@@ -131,10 +142,12 @@ export const useBusinessAuth = () => {
 
         // Fetch business data after login
         let businessData = await businessService.getBusinessByUserId(data.user.id);
+        console.log('useBusinessAuth - Business data after login:', businessData);
 
         if (!businessData) {
           // Check if we need to create business from metadata
           const userData = data.user.user_metadata;
+          console.log('useBusinessAuth - User metadata for business creation:', userData);
           if (userData && userData.business_name) {
             console.log('useBusinessAuth - Creating business from metadata after login');
             businessData = await businessService.createBusinessFromMetadata(
@@ -147,22 +160,29 @@ export const useBusinessAuth = () => {
 
         setBusiness(businessData);
         setIsAuthenticated(true);
+        
+        toast({
+          title: "Login effettuato!",
+          description: "Benvenuto nella tua dashboard.",
+        });
+
+        return { success: true };
       }
-
-      toast({
-        title: "Login effettuato!",
-        description: "Benvenuto nella tua dashboard.",
-      });
-
-      return { success: true };
     } catch (error: any) {
       console.error('Login error:', error);
+      
+      // Provide more specific error messages
+      let errorMessage = error.message;
+      if (error.message === "Invalid login credentials") {
+        errorMessage = "Email o password incorretti. Verifica i tuoi dati di accesso.";
+      }
+      
       toast({
         title: "Errore di login",
-        description: error.message,
+        description: errorMessage,
         variant: "destructive",
       });
-      return { success: false, error: error.message };
+      return { success: false, error: errorMessage };
     } finally {
       setIsLoading(false);
     }
@@ -183,3 +203,6 @@ export const useBusinessAuth = () => {
     isLoading 
   };
 };
+
+// Export the BusinessFormData type so it can be imported by other components
+export type { BusinessFormData } from '@/types/business';
