@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoreFormData {
   store_name: string;
@@ -21,10 +22,11 @@ interface StoreFormData {
 }
 
 interface ManualStoreFormProps {
-  onStoreAdded?: (store: StoreFormData & { latitude?: number; longitude?: number }) => void;
+  businessId: string;
+  onStoreAdded?: () => void;
 }
 
-const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
+const ManualStoreForm = ({ businessId, onStoreAdded }: ManualStoreFormProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<StoreFormData>({
@@ -47,7 +49,6 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
 
     try {
       // Geocodifica l'indirizzo
-      const { supabase } = await import('@/integrations/supabase/client');
       const { data: geocodeData, error: geocodeError } = await supabase.functions.invoke('geocode-address', {
         body: {
           address: formData.address,
@@ -66,13 +67,23 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
 
       const storeData = {
         ...formData,
+        business_id: businessId,
         latitude,
         longitude,
         services: servicesInput ? servicesInput.split(',').map(s => s.trim()).filter(s => s) : []
       };
 
+      // Salva nel database
+      const { error: insertError } = await supabase
+        .from('stores')
+        .insert([storeData]);
+
+      if (insertError) {
+        throw insertError;
+      }
+
       if (onStoreAdded) {
-        onStoreAdded(storeData);
+        onStoreAdded();
       }
 
       toast({

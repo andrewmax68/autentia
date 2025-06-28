@@ -110,9 +110,9 @@ export const useBusinessAuth = () => {
     try {
       console.log('useBusinessAuth - Starting signup for:', formData.email);
       
-      const authData = await authService.signUp(formData);
+      const authResult = await authService.signUp(formData);
       
-      if (authData.user && !authData.user.email_confirmed_at) {
+      if (authResult.user && !authResult.user.email_confirmed_at) {
         console.log('useBusinessAuth - Signup successful, email confirmation required');
         return { 
           success: true, 
@@ -147,9 +147,9 @@ export const useBusinessAuth = () => {
     try {
       console.log('useBusinessAuth - Starting login for:', email);
       
-      const data = await authService.login(email, password);
+      const result = await authService.login(email, password);
       
-      if (data.user && !data.user.email_confirmed_at) {
+      if (result.user && !result.user.email_confirmed_at) {
         console.log('useBusinessAuth - Email not confirmed');
         return { 
           success: false, 

@@ -23,10 +23,11 @@ interface StoreData {
 }
 
 interface StoreUploaderProps {
-  onStoresUploaded?: (stores: StoreData[]) => void;
+  businessId: string;
+  onStoresUploaded?: () => void;
 }
 
-const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
+const StoreUploader = ({ businessId, onStoresUploaded }: StoreUploaderProps) => {
   const [stores, setStores] = useState<StoreData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -162,15 +163,53 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
     });
   };
 
-  const handleSaveStores = () => {
+  const handleSaveStores = async () => {
     const geocodedStores = stores.filter(s => s.status === 'geocoded');
-    if (onStoresUploaded) {
-      onStoresUploaded(geocodedStores);
+    
+    try {
+      const storesToInsert = geocodedStores.map(store => ({
+        business_id: businessId,
+        store_name: store.nomeNegozio,
+        brand: store.brand,
+        address: store.indirizzoCompleto,
+        city: store.citta,
+        province: store.provincia,
+        latitude: store.latitudine,
+        longitude: store.longitudine,
+        services: [store.categoria]
+      }));
+
+      const { error } = await supabase
+        .from('stores')
+        .insert(storesToInsert);
+
+      if (error) {
+        throw error;
+      }
+
+      if (onStoresUploaded) {
+        onStoresUploaded();
+      }
+
+      toast({
+        title: "Punti vendita salvati",
+        description: `${geocodedStores.length} punti vendita aggiunti al sistema`,
+      });
+
+      // Reset the form
+      setStores([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+
+    } catch (error) {
+      console.error('Error saving stores:', error);
+      toast({
+        title: "Errore",
+        description: "Errore durante il salvataggio dei punti vendita",
+        variant: "destructive",
+      });
     }
-    toast({
-      title: "Punti vendita salvati",
-      description: `${geocodedStores.length} punti vendita aggiunti al sistema`,
-    });
   };
 
   const getStatusBadge = (status: string) => {
