@@ -270,7 +270,7 @@ const BusinessDashboard = () => {
               </div>
             )}
 
-            <StoresList stores={stores} onStoreUpdated={checkAuthAndLoadData} />
+            <StoresList businessId={business.id} />
           </CardContent>
         </Card>
       </div>
