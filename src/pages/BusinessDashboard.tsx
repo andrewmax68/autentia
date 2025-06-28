@@ -1,15 +1,34 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { LogOut, Building2, MapPin, Phone, Mail, Globe } from "lucide-react";
+import { LogOut, Building2, MapPin, Phone, Mail, Globe, Store } from "lucide-react";
 import { useBusinessAuth } from "@/hooks/useBusinessAuth";
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
+import StoreUploader from "@/components/StoreUploader";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface StoreData {
+  nomeNegozio: string;
+  brand: string;
+  indirizzoCompleto: string;
+  citta: string;
+  provincia: string;
+  categoria: string;
+  latitudine?: number;
+  longitudine?: number;
+  status?: 'pending' | 'geocoded' | 'error';
+  error?: string;
+}
 
 const BusinessDashboard = () => {
   console.log('BusinessDashboard - Component rendering');
   
   const { business, logout, isAuthenticated, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'overview' | 'stores'>('overview');
+  const { toast } = useToast();
 
   console.log('BusinessDashboard - State:', { business, isAuthenticated, isLoading });
 
@@ -17,6 +36,45 @@ const BusinessDashboard = () => {
     console.log('BusinessDashboard - Logout clicked');
     logout();
     navigate("/business-login");
+  };
+
+  const handleStoresUploaded = async (stores: StoreData[]) => {
+    if (!business) return;
+
+    try {
+      const storesToInsert = stores.map(store => ({
+        business_id: business.id,
+        store_name: store.nomeNegozio,
+        brand: store.brand,
+        address: store.indirizzoCompleto,
+        city: store.citta,
+        province: store.provincia,
+        latitude: store.latitudine,
+        longitude: store.longitudine,
+        services: [store.categoria]
+      }));
+
+      const { data, error } = await supabase
+        .from('stores')
+        .insert(storesToInsert);
+
+      if (error) throw error;
+
+      toast({
+        title: "Punti vendita salvati!",
+        description: `${stores.length} punti vendita sono stati aggiunti con successo`,
+      });
+
+      // Switch to overview tab to show success
+      setActiveTab('overview');
+    } catch (error) {
+      console.error('Error saving stores:', error);
+      toast({
+        title: "Errore nel salvataggio",
+        description: "Si è verificato un errore durante il salvataggio dei punti vendita",
+        variant: "destructive",
+      });
+    }
   };
 
   // Show loading state
@@ -81,135 +139,156 @@ const BusinessDashboard = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Company Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building2 className="h-5 w-5 text-green-600" />
-                Informazioni Azienda
-              </CardTitle>
-              <CardDescription>
-                Dettagli della tua attività
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <Building2 className="h-4 w-4 text-gray-500" />
-                  <div>
-                    <p className="font-medium">{business.business_name}</p>
-                    <p className="text-sm text-gray-600">Proprietario: {business.owner_name}</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-gray-500" />
-                  <p className="text-sm">{business.email}</p>
-                </div>
-                
-                {business.phone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="h-4 w-4 text-gray-500" />
-                    <p className="text-sm">{business.phone}</p>
-                  </div>
-                )}
-                
-                {business.website && (
-                  <div className="flex items-center gap-3">
-                    <Globe className="h-4 w-4 text-gray-500" />
-                    <a href={business.website} target="_blank" rel="noopener noreferrer" 
-                       className="text-sm text-blue-600 hover:underline">
-                      {business.website}
-                    </a>
-                  </div>
-                )}
-                
-                <div className="flex items-center gap-3">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <p className="text-sm">{business.region} - {business.category}</p>
-                </div>
-              </div>
-              
-              {business.description && (
-                <div className="pt-3 border-t">
-                  <p className="text-sm text-gray-600">{business.description}</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Brand Info Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>I Tuoi Brand</CardTitle>
-              <CardDescription>
-                Brand e prodotti che offri
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div>
-                  <p className="font-medium text-green-600">Brand Principale</p>
-                  <p className="text-lg">{business.primary_brand}</p>
-                </div>
-                
-                {business.secondary_brands && business.secondary_brands.length > 0 && (
-                  <div>
-                    <p className="font-medium text-gray-700">Brand Secondari</p>
-                    <div className="flex flex-wrap gap-2 mt-2">
-                      {business.secondary_brands.map((brand, index) => (
-                        <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                          {brand}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+      {/* Navigation Tabs */}
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex space-x-1 mb-6">
+          <Button
+            variant={activeTab === 'overview' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('overview')}
+            className="flex items-center gap-2"
+          >
+            <Building2 className="h-4 w-4" />
+            Panoramica
+          </Button>
+          <Button
+            variant={activeTab === 'stores' ? 'default' : 'outline'}
+            onClick={() => setActiveTab('stores')}
+            className="flex items-center gap-2"
+          >
+            <Store className="h-4 w-4" />
+            Carica Punti Vendita
+          </Button>
         </div>
 
-        {/* Actions Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Prossimi Passi</CardTitle>
-            <CardDescription>
-              Completa il setup della tua presenza online
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                <div>
-                  <h3 className="font-medium text-yellow-800">Account in attesa di verifica</h3>
-                  <p className="text-sm text-yellow-700">
-                    Il tuo account sarà verificato entro 24-48 ore. 
-                    Nel frattempo puoi caricare i tuoi punti vendita.
-                  </p>
+        {/* Overview Tab */}
+        {activeTab === 'overview' && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Company Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-green-600" />
+                  Informazioni Azienda
+                </CardTitle>
+                <CardDescription>
+                  Dettagli della tua attività
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3">
+                    <Building2 className="h-4 w-4 text-gray-500" />
+                    <div>
+                      <p className="font-medium">{business.business_name}</p>
+                      <p className="text-sm text-gray-600">Proprietario: {business.owner_name}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-gray-500" />
+                    <p className="text-sm">{business.email}</p>
+                  </div>
+                  
+                  {business.phone && (
+                    <div className="flex items-center gap-3">
+                      <Phone className="h-4 w-4 text-gray-500" />
+                      <p className="text-sm">{business.phone}</p>
+                    </div>
+                  )}
+                  
+                  {business.website && (
+                    <div className="flex items-center gap-3">
+                      <Globe className="h-4 w-4 text-gray-500" />
+                      <a href={business.website} target="_blank" rel="noopener noreferrer" 
+                         className="text-sm text-blue-600 hover:underline">
+                        {business.website}
+                      </a>
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-gray-500" />
+                    <p className="text-sm">{business.region} - {business.category}</p>
+                  </div>
                 </div>
-                <div className="flex-shrink-0">
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    business.is_verified 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-yellow-100 text-yellow-800'
-                  }`}>
-                    {business.is_verified ? 'Verificato' : 'In attesa'}
-                  </span>
+                
+                {business.description && (
+                  <div className="pt-3 border-t">
+                    <p className="text-sm text-gray-600">{business.description}</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Brand Info Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>I Tuoi Brand</CardTitle>
+                <CardDescription>
+                  Brand e prodotti che offri
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-medium text-green-600">Brand Principale</p>
+                    <p className="text-lg">{business.primary_brand}</p>
+                  </div>
+                  
+                  {business.secondary_brands && business.secondary_brands.length > 0 && (
+                    <div>
+                      <p className="font-medium text-gray-700">Brand Secondari</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {business.secondary_brands.map((brand, index) => (
+                          <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                            {brand}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-              
-              <div className="text-center py-8">
-                <p className="text-gray-600 mb-4">Funzionalità di gestione punti vendita in arrivo...</p>
-                <p className="text-sm text-gray-500">
-                  Presto potrai caricare e gestire i tuoi punti vendita
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+              </CardContent>
+            </Card>
+
+            {/* Status Card */}
+            <Card className="lg:col-span-2">
+              <CardHeader>
+                <CardTitle>Stato Account</CardTitle>
+                <CardDescription>
+                  Stato di verifica e prossimi passi
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                  <div>
+                    <h3 className="font-medium text-yellow-800">Account in attesa di verifica</h3>
+                    <p className="text-sm text-yellow-700">
+                      Il tuo account sarà verificato entro 24-48 ore. 
+                      Nel frattempo puoi caricare i tuoi punti vendita.
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                      business.is_verified 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-yellow-100 text-yellow-800'
+                    }`}>
+                      {business.is_verified ? 'Verificato' : 'In attesa'}
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Stores Tab */}
+        {activeTab === 'stores' && (
+          <div>
+            <StoreUploader onStoresUploaded={handleStoresUploaded} />
+          </div>
+        )}
       </div>
     </div>
   );
