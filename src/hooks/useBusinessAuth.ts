@@ -41,12 +41,11 @@ export const useBusinessAuth = () => {
     const { data: { subscription } } = authService.onAuthStateChange(
       async (event, session) => {
         console.log('useBusinessAuth - Auth state changed:', event, session?.user?.email);
-        console.log('useBusinessAuth - Full session object:', session);
         
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Defer business data fetching with setTimeout
+        // Handle business data loading
         if (session?.user && event === 'SIGNED_IN') {
           console.log('useBusinessAuth - User signed in, loading business data...');
           setTimeout(async () => {
@@ -64,7 +63,6 @@ export const useBusinessAuth = () => {
     // THEN check for existing session
     authService.getSession().then((session) => {
       console.log('useBusinessAuth - Initial session check:', session?.user?.email);
-      console.log('useBusinessAuth - Initial session full object:', session);
       
       setSession(session);
       setUser(session?.user ?? null);
@@ -74,8 +72,6 @@ export const useBusinessAuth = () => {
         setTimeout(async () => {
           await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
         }, 0);
-      } else {
-        console.log('useBusinessAuth - No existing session found');
       }
       
       setIsInitializing(false);
@@ -90,8 +86,6 @@ export const useBusinessAuth = () => {
   const loadBusinessData = async (userId: string, userMetadata: any, userEmail: string | undefined) => {
     try {
       console.log('useBusinessAuth - Loading business data for user:', userId);
-      console.log('useBusinessAuth - User metadata:', userMetadata);
-      console.log('useBusinessAuth - User email:', userEmail);
       
       let businessData = await businessService.getBusinessByUserId(userId);
       console.log('useBusinessAuth - Business data from database:', businessData);
@@ -103,19 +97,14 @@ export const useBusinessAuth = () => {
       }
 
       if (businessData) {
-        console.log('useBusinessAuth - Business data loaded successfully:');
-        console.log('- Business name:', businessData.business_name);
-        console.log('- Primary brand:', businessData.primary_brand);
-        console.log('- Secondary brands:', businessData.secondary_brands);
-        console.log('- User ID match:', businessData.user_id === userId);
+        console.log('useBusinessAuth - Business data loaded successfully:', businessData.business_name);
         setBusiness(businessData);
       } else {
-        console.error('useBusinessAuth - No business data found after all attempts');
+        console.error('useBusinessAuth - No business data found');
         setBusiness(null);
       }
     } catch (error) {
       console.error('useBusinessAuth - Error loading business data:', error);
-      console.error('useBusinessAuth - Error details:', JSON.stringify(error, null, 2));
       setBusiness(null);
     }
   };
@@ -165,20 +154,22 @@ export const useBusinessAuth = () => {
       
       const result = await authService.login(email, password);
       
-      if (result.user && !result.user.email_confirmed_at) {
-        console.log('useBusinessAuth - Email not confirmed');
-        return { 
-          success: false, 
-          error: { message: 'Per favore conferma la tua email prima di accedere' }
-        };
-      }
-
-      console.log('useBusinessAuth - Login successful');
+      console.log('useBusinessAuth - Login successful for:', email);
       return { success: true };
       
     } catch (error: any) {
       console.error('useBusinessAuth - Login error:', error);
-      return { success: false, error };
+      
+      let errorMessage = 'Errore durante il login';
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Email o password non corretti';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Per favore conferma la tua email prima di accedere';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      return { success: false, error: { message: errorMessage } };
     } finally {
       setIsLoading(false);
     }
