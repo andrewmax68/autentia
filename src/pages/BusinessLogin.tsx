@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MapPin, Mail, Lock, Building2, ArrowRight, AlertCircle, RefreshCw } from "lucide-react";
+import { MapPin, Mail, Lock, Building2, ArrowRight, AlertCircle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -66,6 +65,16 @@ const BusinessLogin = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-white flex items-center justify-center py-12 px-6">
+      {/* BOTTONE GRANDE PER TORNARE ALLA HOME */}
+      <div className="fixed top-4 left-4 z-50">
+        <Link to="/">
+          <Button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-bold text-lg shadow-lg">
+            <Home className="mr-2 h-5 w-5" />
+            🏠 TORNA ALLA HOME
+          </Button>
+        </Link>
+      </div>
+
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">

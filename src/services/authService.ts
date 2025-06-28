@@ -1,6 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { BusinessFormData } from '@/types/business';
+import { BusinessFormData } from '@/hooks/useBusinessAuth';
 
 export const authService = {
   async signUp(formData: BusinessFormData) {
