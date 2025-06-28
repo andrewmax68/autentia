@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
@@ -58,7 +59,7 @@ export const useBusinessAuth = () => {
     );
 
     // THEN check for existing session
-    authService.getSession().then(({ data: { session } }) => {
+    authService.getSession().then((session) => {
       console.log('useBusinessAuth - Initial session check:', session?.user?.email);
       
       setSession(session);
