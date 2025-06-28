@@ -1,28 +1,25 @@
 
-import { useState } from "react";
-
 console.log("=== INDEX FILE LOADED ===");
 
 const Index = () => {
   console.log("=== INDEX COMPONENT RENDERING ===");
   
-  try {
-    return (
-      <div style={{ 
-        minHeight: "100vh", 
-        backgroundColor: "red", 
-        padding: "20px",
+  return (
+    <div>
+      <h1>TEST FUNZIONA!</h1>
+      <p>Se vedi questo testo, React sta funzionando</p>
+      <div style={{
+        width: "200px",
+        height: "200px",
+        backgroundColor: "red",
         color: "white",
-        fontSize: "24px"
+        padding: "20px",
+        margin: "20px"
       }}>
-        <h1>TEST - Se vedi questo, React funziona!</h1>
-        <p>Pagina di test - sfondo rosso per debug</p>
+        QUADRATO ROSSO DI TEST
       </div>
-    );
-  } catch (error) {
-    console.error("Errore nel render:", error);
-    return <div>ERRORE NEL COMPONENTE</div>;
-  }
+    </div>
+  );
 };
 
 console.log("=== INDEX COMPONENT DEFINED ===");
