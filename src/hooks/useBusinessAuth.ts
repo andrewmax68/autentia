@@ -22,7 +22,7 @@ export interface BusinessFormData {
 
 export interface Business {
   id: string;
-  company_name: string;
+  business_name: string;
   owner_name: string;
   email: string;
   phone: string;
@@ -33,7 +33,7 @@ export interface Business {
   logo_url: string | null;
   primary_brand: string;
   secondary_brands: string[];
-  slug: string;
+  is_verified: boolean;
 }
 
 export const useBusinessAuth = () => {
@@ -54,26 +54,25 @@ export const useBusinessAuth = () => {
         console.log('useBusinessAuth - Session:', session);
         
         if (session?.user) {
-          console.log('useBusinessAuth - User found, creating mock business');
-          // Mock business data for now
-          const mockBusiness: Business = {
-            id: session.user.id,
-            company_name: "Pastificio del Borgo",
-            owner_name: "Mario Rossi",
-            email: session.user.email || "",
-            phone: "+39 333 123 4567",
-            category: "Alimentari",
-            region: "Toscana",
-            description: "Produzione artigianale di pasta fresca",
-            website: "https://pastificiobargo.it",
-            logo_url: null,
-            primary_brand: "Pasta del Borgo",
-            secondary_brands: ["Bio Pasta", "Pasta Premium"],
-            slug: "pastificio-del-borgo"
-          };
-          setBusiness(mockBusiness);
-          setIsAuthenticated(true);
-          console.log('useBusinessAuth - Auth successful');
+          console.log('useBusinessAuth - User found, fetching business data');
+          
+          // Fetch real business data from database
+          const { data: businessData, error } = await supabase
+            .from('businesses')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+
+          if (error) {
+            console.error('useBusinessAuth - Error fetching business:', error);
+            // User exists but no business registered yet
+            setIsAuthenticated(true);
+            setBusiness(null);
+          } else {
+            console.log('useBusinessAuth - Business found:', businessData);
+            setBusiness(businessData);
+            setIsAuthenticated(true);
+          }
         } else {
           console.log('useBusinessAuth - No user session');
           setIsAuthenticated(false);
@@ -90,6 +89,23 @@ export const useBusinessAuth = () => {
     };
 
     checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log('useBusinessAuth - Auth state changed:', event, session);
+        if (session?.user) {
+          setIsAuthenticated(true);
+          // Refetch business data when auth state changes
+          checkAuth();
+        } else {
+          setIsAuthenticated(false);
+          setBusiness(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async (formData: BusinessFormData) => {
@@ -100,6 +116,9 @@ export const useBusinessAuth = () => {
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/business-dashboard`
+        }
       });
 
       if (authError) throw authError;
@@ -126,7 +145,7 @@ export const useBusinessAuth = () => {
         }
 
         // Create business profile
-        const { error: businessError } = await supabase
+        const { data: businessData, error: businessError } = await supabase
           .from('businesses')
           .insert({
             user_id: authData.user.id,
@@ -141,7 +160,9 @@ export const useBusinessAuth = () => {
             logo_url: logoUrl,
             primary_brand: formData.primaryBrand,
             secondary_brands: formData.secondaryBrands,
-          });
+          })
+          .select()
+          .single();
 
         if (businessError) throw businessError;
 
@@ -153,6 +174,7 @@ export const useBusinessAuth = () => {
         return { success: true };
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       toast({
         title: "Errore durante la registrazione",
         description: error.message,
@@ -175,27 +197,32 @@ export const useBusinessAuth = () => {
       if (error) throw error;
 
       if (data.user) {
-        const mockBusiness: Business = {
-          id: data.user.id,
-          company_name: "Pastificio del Borgo",
-          owner_name: "Mario Rossi",
-          email: data.user.email || "",
-          phone: "+39 333 123 4567",
-          category: "Alimentari",
-          region: "Toscana",
-          description: "Produzione artigianale di pasta fresca",
-          website: "https://pastificiobargo.it",
-          logo_url: null,
-          primary_brand: "Pasta del Borgo",
-          secondary_brands: ["Bio Pasta", "Pasta Premium"],
-          slug: "pastificio-del-borgo"
-        };
-        setBusiness(mockBusiness);
-        setIsAuthenticated(true);
+        // Fetch business data after login
+        const { data: businessData, error: businessError } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('user_id', data.user.id)
+          .single();
+
+        if (businessError) {
+          console.error('Error fetching business after login:', businessError);
+          // User exists but no business - redirect to complete registration
+          setIsAuthenticated(true);
+          setBusiness(null);
+        } else {
+          setBusiness(businessData);
+          setIsAuthenticated(true);
+        }
       }
+
+      toast({
+        title: "Login effettuato!",
+        description: "Benvenuto nella tua dashboard.",
+      });
 
       return { success: true };
     } catch (error: any) {
+      console.error('Login error:', error);
       toast({
         title: "Errore di login",
         description: error.message,

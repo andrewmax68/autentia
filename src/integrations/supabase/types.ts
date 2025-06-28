@@ -9,10 +9,203 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      businesses: {
+        Row: {
+          business_name: string
+          category: string | null
+          created_at: string | null
+          description: string | null
+          email: string
+          id: string
+          is_verified: boolean | null
+          logo_url: string | null
+          owner_name: string
+          phone: string | null
+          primary_brand: string
+          region: string | null
+          secondary_brands: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          website: string | null
+        }
+        Insert: {
+          business_name: string
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          email: string
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          owner_name: string
+          phone?: string | null
+          primary_brand: string
+          region?: string | null
+          secondary_brands?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Update: {
+          business_name?: string
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          email?: string
+          id?: string
+          is_verified?: boolean | null
+          logo_url?: string | null
+          owner_name?: string
+          phone?: string | null
+          primary_brand?: string
+          region?: string | null
+          secondary_brands?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      stores: {
+        Row: {
+          address: string
+          brand: string
+          business_id: string | null
+          city: string
+          created_at: string | null
+          email: string | null
+          id: string
+          is_active: boolean | null
+          latitude: number | null
+          longitude: number | null
+          opening_hours: Json | null
+          phone: string | null
+          postal_code: string | null
+          province: string
+          services: string[] | null
+          store_name: string
+          updated_at: string | null
+          website: string | null
+        }
+        Insert: {
+          address: string
+          brand: string
+          business_id?: string | null
+          city: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          opening_hours?: Json | null
+          phone?: string | null
+          postal_code?: string | null
+          province: string
+          services?: string[] | null
+          store_name: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Update: {
+          address?: string
+          brand?: string
+          business_id?: string | null
+          city?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          is_active?: boolean | null
+          latitude?: number | null
+          longitude?: number | null
+          opening_hours?: Json | null
+          phone?: string | null
+          postal_code?: string | null
+          province?: string
+          services?: string[] | null
+          store_name?: string
+          updated_at?: string | null
+          website?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stores_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stores_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "public_businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      public_businesses: {
+        Row: {
+          business_name: string | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          id: string | null
+          logo_url: string | null
+          primary_brand: string | null
+          region: string | null
+          secondary_brands: string[] | null
+          website: string | null
+        }
+        Insert: {
+          business_name?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          logo_url?: string | null
+          primary_brand?: string | null
+          region?: string | null
+          secondary_brands?: string[] | null
+          website?: string | null
+        }
+        Update: {
+          business_name?: string | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string | null
+          logo_url?: string | null
+          primary_brand?: string | null
+          region?: string | null
+          secondary_brands?: string[] | null
+          website?: string | null
+        }
+        Relationships: []
+      }
+      public_stores: {
+        Row: {
+          address: string | null
+          brand: string | null
+          business_name: string | null
+          category: string | null
+          city: string | null
+          email: string | null
+          id: string | null
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          opening_hours: Json | null
+          phone: string | null
+          province: string | null
+          services: string[] | null
+          store_name: string | null
+          website: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never

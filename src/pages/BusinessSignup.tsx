@@ -1,77 +1,58 @@
+
 import { useState } from "react";
-import { Link } from "react-router-dom";
-import { MapPin, Mail, Lock, Building2, ArrowRight } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { MapPin, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { toast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useBusinessAuth, BusinessFormData } from "@/hooks/useBusinessAuth";
 
 const BusinessSignup = () => {
-  const [companyName, setCompanyName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [description, setDescription] = useState("");
-  const [agreeToTerms, setAgreeToTerms] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState<BusinessFormData>({
+    businessName: "",
+    ownerName: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    phone: "",
+    category: "",
+    region: "",
+    description: "",
+    website: "",
+    primaryBrand: "",
+    secondaryBrands: [],
+    logo: null,
+    acceptTerms: false
+  });
+
+  const { signUp, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!agreeToTerms) {
-      toast({
-        title: "Attenzione!",
-        description: "Devi accettare i termini e le condizioni per registrarti.",
-      });
+    if (!formData.acceptTerms) {
+      alert("Devi accettare i termini e le condizioni per registrarti.");
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email: email,
-        password: password,
-        options: {
-          data: {
-            company_name: companyName,
-            description: description,
-          },
-        },
-      });
-
-      if (error) {
-        console.error("Errore durante la registrazione:", error.message);
-        toast({
-          title: "Errore!",
-          description:
-            error.message ||
-            "Si è verificato un errore durante la registrazione. Riprova.",
-        });
-      } else {
-        console.log("Registrazione avvenuta con successo!", data);
-        toast({
-          title: "Registrazione avvenuta!",
-          description:
-            "Ti abbiamo inviato una email di conferma. Per favore, verifica la tua casella di posta.",
-        });
-        navigate('/business-login');
-      }
-    } catch (error) {
-      console.error("Si è verificato un errore inatteso:", error);
-      toast({
-        title: "Errore Inatteso!",
-        description:
-          "Si è verificato un errore inatteso. Per favore, riprova più tardi.",
-      });
-    } finally {
-      setIsLoading(false);
+    if (formData.password !== formData.confirmPassword) {
+      alert("Le password non coincidono.");
+      return;
     }
+
+    const result = await signUp(formData);
+    if (result.success) {
+      navigate('/business-login');
+    }
+  };
+
+  const handleInputChange = (field: keyof BusinessFormData, value: any) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   return (
@@ -110,70 +91,177 @@ const BusinessSignup = () => {
 
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="companyName" className="text-sm font-medium text-gray-700">
-                  Nome dell'Impresa
-                </Label>
-                <Input
-                  type="text"
-                  id="companyName"
-                  placeholder="Nome della tua impresa"
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="rounded-xl border-green-200 focus:border-green-400"
-                  required
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="businessName">Nome dell'Impresa</Label>
+                  <Input
+                    id="businessName"
+                    placeholder="Nome della tua impresa"
+                    value={formData.businessName}
+                    onChange={(e) => handleInputChange('businessName', e.target.value)}
+                    className="rounded-xl border-green-200 focus:border-green-400"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="ownerName">Nome Proprietario</Label>
+                  <Input
+                    id="ownerName"
+                    placeholder="Il tuo nome e cognome"
+                    value={formData.ownerName}
+                    onChange={(e) => handleInputChange('ownerName', e.target.value)}
+                    className="rounded-xl border-green-200 focus:border-green-400"
+                    required
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email aziendale
-                </Label>
+                <Label htmlFor="email">Email aziendale</Label>
                 <Input
                   type="email"
                   id="email"
                   placeholder="impresa@esempio.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={formData.email}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   className="rounded-xl border-green-200 focus:border-green-400"
                   required
                 />
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    type="password"
+                    id="password"
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={(e) => handleInputChange('password', e.target.value)}
+                    className="rounded-xl border-green-200 focus:border-green-400"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Conferma Password</Label>
+                  <Input
+                    type="password"
+                    id="confirmPassword"
+                    placeholder="••••••••"
+                    value={formData.confirmPassword}
+                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                    className="rounded-xl border-green-200 focus:border-green-400"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Telefono</Label>
+                  <Input
+                    type="tel"
+                    id="phone"
+                    placeholder="+39 333 123 4567"
+                    value={formData.phone}
+                    onChange={(e) => handleInputChange('phone', e.target.value)}
+                    className="rounded-xl border-green-200 focus:border-green-400"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="category">Categoria</Label>
+                  <Select onValueChange={(value) => handleInputChange('category', value)}>
+                    <SelectTrigger className="rounded-xl border-green-200">
+                      <SelectValue placeholder="Seleziona categoria" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Alimentari">Alimentari</SelectItem>
+                      <SelectItem value="Bevande">Bevande</SelectItem>
+                      <SelectItem value="Artigianato">Artigianato</SelectItem>
+                      <SelectItem value="Tessile">Tessile</SelectItem>
+                      <SelectItem value="Cosmesi">Cosmesi</SelectItem>
+                      <SelectItem value="Altro">Altro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="region">Regione</Label>
+                  <Select onValueChange={(value) => handleInputChange('region', value)}>
+                    <SelectTrigger className="rounded-xl border-green-200">
+                      <SelectValue placeholder="Seleziona regione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Lombardia">Lombardia</SelectItem>
+                      <SelectItem value="Lazio">Lazio</SelectItem>
+                      <SelectItem value="Campania">Campania</SelectItem>
+                      <SelectItem value="Sicilia">Sicilia</SelectItem>
+                      <SelectItem value="Veneto">Veneto</SelectItem>
+                      <SelectItem value="Toscana">Toscana</SelectItem>
+                      <SelectItem value="Piemonte">Piemonte</SelectItem>
+                      <SelectItem value="Emilia-Romagna">Emilia-Romagna</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="primaryBrand">Brand Principale</Label>
+                  <Input
+                    id="primaryBrand"
+                    placeholder="Nome del tuo brand principale"
+                    value={formData.primaryBrand}
+                    onChange={(e) => handleInputChange('primaryBrand', e.target.value)}
+                    className="rounded-xl border-green-200 focus:border-green-400"
+                    required
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Password
-                </Label>
+                <Label htmlFor="website">Sito Web (opzionale)</Label>
                 <Input
-                  type="password"
-                  id="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  type="url"
+                  id="website"
+                  placeholder="https://www.tuosito.it"
+                  value={formData.website}
+                  onChange={(e) => handleInputChange('website', e.target.value)}
                   className="rounded-xl border-green-200 focus:border-green-400"
-                  required
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium text-gray-700">
-                  Descrizione dell'Impresa
-                </Label>
+                <Label htmlFor="description">Descrizione dell'Impresa</Label>
                 <Textarea
                   id="description"
                   placeholder="Racconta la storia della tua impresa e cosa offri"
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
+                  value={formData.description}
+                  onChange={(e) => handleInputChange('description', e.target.value)}
                   className="rounded-xl border-green-200 focus:border-green-400 resize-none"
                   rows={4}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="logo">Logo Aziendale (opzionale)</Label>
+                <Input
+                  type="file"
+                  id="logo"
+                  accept="image/*"
+                  onChange={(e) => handleInputChange('logo', e.target.files?.[0] || null)}
+                  className="rounded-xl border-green-200 focus:border-green-400"
                 />
               </div>
 
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="terms"
-                  checked={agreeToTerms}
-                  onCheckedChange={(checked) => setAgreeToTerms(!!checked)}
+                  checked={formData.acceptTerms}
+                  onCheckedChange={(checked) => handleInputChange('acceptTerms', !!checked)}
                   className="rounded border-gray-300 focus:ring-green-400"
                 />
                 <Label htmlFor="terms" className="text-sm text-gray-600">

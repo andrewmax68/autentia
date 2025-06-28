@@ -1,33 +1,31 @@
 
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { MapPin, Mail, Lock, Building2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { useBusinessAuth } from "@/hooks/useBusinessAuth";
 
 const BusinessLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading } = useBusinessAuth();
+  const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // Simulazione login - in futuro integrazione con Supabase
-    setTimeout(() => {
-      console.log("Login attempt:", { email, password });
-      setIsLoading(false);
-      // Redirect to dashboard
-      window.location.href = "/business-dashboard";
-    }, 1500);
+    const result = await login(email, password);
+    if (result.success) {
+      navigate("/business-dashboard");
+    }
   };
 
   const handleSocialLogin = (provider: string) => {
     console.log(`Login with ${provider}`);
-    // In futuro integrazione con Supabase Auth
+    // In futuro integrazione con Supabase Auth social providers
   };
 
   return (
