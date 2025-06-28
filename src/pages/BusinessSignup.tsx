@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, Mail, Lock, Building2, User, Phone, ArrowRight } from "lucide-react";
+import { MapPin, Mail, Lock, Building2, User, Phone, ArrowRight, Upload, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,16 +19,43 @@ const BusinessSignup = () => {
     category: "",
     region: "",
     description: "",
+    website: "",
+    logo: null as File | null,
     acceptTerms: false
   });
   const [isLoading, setIsLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const categories = ["Alimentari", "Bevande", "Cosmetici", "Artigianato", "Tessile", "Agricoltura", "Altro"];
   const regions = ["Lombardia", "Piemonte", "Toscana", "Umbria", "Lazio", "Campania", "Sicilia", "Altro"];
 
-  const handleInputChange = (field: string, value: string | boolean) => {
+  const handleInputChange = (field: string, value: string | boolean | File | null) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        alert("Il file è troppo grande. Massimo 5MB.");
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        alert("Per favore seleziona un'immagine valida.");
+        return;
+      }
+
+      handleInputChange('logo', file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -238,7 +264,69 @@ const BusinessSignup = () => {
 
               {/* Step 2: Business Details */}
               {currentStep === 2 && (
-                <div className="space-y-4">
+                <div className="space-y-6">
+                  {/* Logo Upload Section */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-700">
+                      Logo Aziendale
+                    </label>
+                    <div className="border-2 border-dashed border-green-200 rounded-xl p-6 text-center">
+                      {logoPreview ? (
+                        <div className="space-y-3">
+                          <img
+                            src={logoPreview}
+                            alt="Anteprima logo"
+                            className="w-24 h-24 object-contain mx-auto rounded-lg border border-green-200"
+                          />
+                          <p className="text-sm text-gray-600">
+                            {formData.logo?.name}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setLogoPreview(null);
+                              handleInputChange('logo', null);
+                            }}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            Rimuovi
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="bg-green-50 p-3 rounded-full w-16 h-16 mx-auto flex items-center justify-center">
+                            <Upload className="h-8 w-8 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-gray-700 font-medium mb-1">
+                              Carica il logo della tua azienda
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              PNG, JPG fino a 5MB
+                            </p>
+                          </div>
+                          <input
+                            type="file"
+                            id="logo-upload"
+                            accept="image/*"
+                            onChange={handleLogoUpload}
+                            className="hidden"
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => document.getElementById('logo-upload')?.click()}
+                            className="border-green-200 hover:bg-green-50"
+                          >
+                            Seleziona File
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-gray-700">
@@ -271,6 +359,26 @@ const BusinessSignup = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  {/* Website Field */}
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Sito Web Aziendale
+                    </label>
+                    <div className="relative">
+                      <Globe className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                      <Input
+                        type="url"
+                        placeholder="https://www.aziendarossi.it"
+                        value={formData.website}
+                        onChange={(e) => handleInputChange('website', e.target.value)}
+                        className="pl-10 rounded-xl border-green-200 focus:border-green-400"
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      Il sito web verrà mostrato nelle ricerche e nel profilo aziendale
+                    </p>
                   </div>
 
                   <div className="space-y-2">
