@@ -8,10 +8,6 @@ const FeaturesSection = () => {
       <div className="container mx-auto px-4">
         <div className="text-center mb-12">
           <h3 className="text-3xl font-bold text-gray-900 mb-4">Come Funziona</h3>
-          <p className="text-gray-600 max-w-2xl mx-auto">
-            Che tu abbia assaggiato qualcosa di incredibile a un evento o sia un artisan lover sempre alla ricerca di eccellenze, 
-            trova facilmente dove acquistare i prodotti artigianali di qualità
-          </p>
         </div>
         
         <div className="grid md:grid-cols-3 gap-8">
@@ -22,8 +18,7 @@ const FeaturesSection = () => {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Digita il nome del brand artigianale: quel formaggio assaggiato alla festa, il vino della fiera, 
-                la pasta di quella startup locale o esplora nuove eccellenze
+                Digita il nome del brand artigianale che stai cercando
               </CardDescription>
             </CardContent>
           </Card>
@@ -35,7 +30,7 @@ const FeaturesSection = () => {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Visualizza sulla mappa tutti i punti vendita vicino a te che hanno il prodotto artigianale disponibile
+                Visualizza tutti i punti vendita vicino a te
               </CardDescription>
             </CardContent>
           </Card>
@@ -47,7 +42,7 @@ const FeaturesSection = () => {
             </CardHeader>
             <CardContent>
               <CardDescription>
-                Ottieni indicazioni, orari di apertura e disponibilità per organizzare al meglio la tua spesa e portare a casa l'eccellenza
+                Ottieni indicazioni e orari di apertura
               </CardDescription>
             </CardContent>
           </Card>

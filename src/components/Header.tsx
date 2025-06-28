@@ -6,11 +6,7 @@ const Header = () => {
     <header className="border-b bg-white">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         <div className="flex items-center space-x-3">
-          <img 
-            src="/lovable-uploads/6b03f54d-ca30-4ce9-8444-aa880373241d.png" 
-            alt="Dove Si Vende? Logo" 
-            className="h-10 w-auto"
-          />
+          <h1 className="text-2xl font-bold text-green-600">Dove Si Vende?</h1>
         </div>
         <nav className="hidden md:flex space-x-6">
           <a href="#cerca-prodotti" className="text-gray-600 hover:text-gray-900">Cerca Prodotti</a>

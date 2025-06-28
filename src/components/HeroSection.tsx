@@ -10,8 +10,7 @@ const HeroSection = () => {
           Scopri dove <span className="text-green-600">comprare</span> l'eccellenza artigianale
         </h2>
         <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-          Hai assaggiato un formaggio incredibile a una festa? Scoperto un vino locale a una fiera? 
-          Letto di una startup che produce pasta artigianale? Trova subito dove comprare questi prodotti di eccellenza nei negozi della tua zona!
+          Trova subito dove comprare questi prodotti di eccellenza nei negozi della tua zona!
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button size="lg" className="bg-green-600 hover:bg-green-700">
