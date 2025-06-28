@@ -41,16 +41,19 @@ export const useBusinessAuth = () => {
     const { data: { subscription } } = authService.onAuthStateChange(
       async (event, session) => {
         console.log('useBusinessAuth - Auth state changed:', event, session?.user?.email);
+        console.log('useBusinessAuth - Full session object:', session);
         
         setSession(session);
         setUser(session?.user ?? null);
         
         // Defer business data fetching with setTimeout
         if (session?.user && event === 'SIGNED_IN') {
+          console.log('useBusinessAuth - User signed in, loading business data...');
           setTimeout(async () => {
             await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
           }, 0);
         } else {
+          console.log('useBusinessAuth - No user or not signed in, clearing business data');
           setBusiness(null);
         }
         
@@ -61,14 +64,18 @@ export const useBusinessAuth = () => {
     // THEN check for existing session
     authService.getSession().then((session) => {
       console.log('useBusinessAuth - Initial session check:', session?.user?.email);
+      console.log('useBusinessAuth - Initial session full object:', session);
       
       setSession(session);
       setUser(session?.user ?? null);
       
       if (session?.user) {
+        console.log('useBusinessAuth - Found existing session, loading business data...');
         setTimeout(async () => {
           await loadBusinessData(session.user.id, session.user.user_metadata, session.user.email);
         }, 0);
+      } else {
+        console.log('useBusinessAuth - No existing session found');
       }
       
       setIsInitializing(false);
@@ -83,25 +90,32 @@ export const useBusinessAuth = () => {
   const loadBusinessData = async (userId: string, userMetadata: any, userEmail: string | undefined) => {
     try {
       console.log('useBusinessAuth - Loading business data for user:', userId);
+      console.log('useBusinessAuth - User metadata:', userMetadata);
+      console.log('useBusinessAuth - User email:', userEmail);
       
       let businessData = await businessService.getBusinessByUserId(userId);
+      console.log('useBusinessAuth - Business data from database:', businessData);
       
       if (!businessData && userMetadata && userEmail) {
         console.log('useBusinessAuth - No business found, creating from metadata');
         businessData = await businessService.createBusinessFromMetadata(userId, userMetadata, userEmail);
+        console.log('useBusinessAuth - Created business from metadata:', businessData);
       }
 
       if (businessData) {
-        console.log('useBusinessAuth - Business data loaded:', businessData.business_name);
-        console.log('useBusinessAuth - Primary brand:', businessData.primary_brand);
-        console.log('useBusinessAuth - Secondary brands:', businessData.secondary_brands);
+        console.log('useBusinessAuth - Business data loaded successfully:');
+        console.log('- Business name:', businessData.business_name);
+        console.log('- Primary brand:', businessData.primary_brand);
+        console.log('- Secondary brands:', businessData.secondary_brands);
+        console.log('- User ID match:', businessData.user_id === userId);
         setBusiness(businessData);
       } else {
-        console.log('useBusinessAuth - No business data found');
+        console.error('useBusinessAuth - No business data found after all attempts');
         setBusiness(null);
       }
     } catch (error) {
       console.error('useBusinessAuth - Error loading business data:', error);
+      console.error('useBusinessAuth - Error details:', JSON.stringify(error, null, 2));
       setBusiness(null);
     }
   };

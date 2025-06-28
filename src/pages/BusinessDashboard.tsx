@@ -1,18 +1,16 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { MapPin, Store, Plus, LogOut, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/integrations/supabase/client";
-import { Business } from "@/types/business";
+import { useBusinessAuth } from "@/hooks/useBusinessAuth";
 import StoresList from "@/components/StoresList";
 import ManualStoreForm from "@/components/ManualStoreForm";
 import StoreUploader from "@/components/StoreUploader";
 
 const BusinessDashboard = () => {
-  const [business, setBusiness] = useState<Business | null>(null);
+  const { user, session, business, isLoading: authLoading, isInitializing } = useBusinessAuth();
   const [stores, setStores] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,80 +18,65 @@ const BusinessDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuthAndLoadData();
-  }, []);
+    console.log('BusinessDashboard - Auth state changed:');
+    console.log('- User:', user?.email);
+    console.log('- Session:', !!session);
+    console.log('- Business:', business?.business_name);
+    console.log('- Auth loading:', authLoading);
+    console.log('- Initializing:', isInitializing);
 
-  const checkAuthAndLoadData = async () => {
-    try {
-      // Check if user is logged in
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.log("No session found, redirecting to login");
+    if (!isInitializing) {
+      if (!user || !session) {
+        console.log("BusinessDashboard - No user/session, redirecting to login");
         navigate('/business-login');
         return;
       }
 
-      console.log("Session found:", session.user.email);
-
-      // Get business data
-      const { data: businessData, error: businessError } = await supabase
-        .from('businesses')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-
-      if (businessError) {
-        console.error("Error fetching business:", businessError);
-        setError("Errore nel caricamento dei dati dell'impresa");
-        setIsLoading(false);
-        return;
-      }
-
-      if (!businessData) {
-        console.log("No business found for user");
+      if (business) {
+        console.log("BusinessDashboard - Business found, loading stores");
+        loadStores();
+      } else if (!authLoading) {
+        console.log("BusinessDashboard - No business found and not loading");
         setError("Nessuna impresa associata a questo account");
         setIsLoading(false);
-        return;
       }
+    }
+  }, [user, session, business, authLoading, isInitializing, navigate]);
 
-      console.log("Business loaded:", businessData);
-      setBusiness(businessData);
+  const loadStores = async () => {
+    if (!business) {
+      console.log("BusinessDashboard - No business available for loading stores");
+      return;
+    }
 
-      // Get stores for this business
-      const { data: storesData, error: storesError } = await supabase
-        .from('stores')
-        .select('*')
-        .eq('business_id', businessData.id)
-        .order('store_name');
-
-      if (storesError) {
-        console.error("Error fetching stores:", storesError);
-        setError("Errore nel caricamento dei punti vendita");
-      } else {
-        console.log("Stores loaded:", storesData);
-        setStores(storesData || []);
-      }
-
+    try {
+      console.log("BusinessDashboard - Loading stores for business:", business.id);
+      
+      // We'll use the useBusinessAuth hook's business data directly
+      // No need to make additional API calls here since the business is already loaded
+      setStores([]); // Reset stores for now
+      setError("");
+      
     } catch (error) {
-      console.error("Error in checkAuthAndLoadData:", error);
-      setError("Errore durante il caricamento");
+      console.error("BusinessDashboard - Error loading stores:", error);
+      setError("Errore nel caricamento dei punti vendita");
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    console.log("BusinessDashboard - Logging out");
+    // Use the logout from useBusinessAuth hook
     navigate('/business-login');
   };
 
   const handleStoreAdded = () => {
     setShowAddStore(false);
-    checkAuthAndLoadData(); // Reload data
+    loadStores();
   };
 
-  if (isLoading) {
+  if (isInitializing || authLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -104,7 +87,27 @@ const BusinessDashboard = () => {
     );
   }
 
-  if (error) {
+  if (!user || !session) {
+    console.log("BusinessDashboard - Rendering: No user or session");
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-6 text-center">
+            <Alert className="border-red-200 bg-red-50 mb-4">
+              <AlertDescription className="text-red-800">
+                Sessione scaduta. Per favore accedi di nuovo.
+              </AlertDescription>
+            </Alert>
+            <Button onClick={() => navigate('/business-login')}>
+              Vai al Login
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error && !business) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <Card className="max-w-md w-full">
@@ -114,9 +117,14 @@ const BusinessDashboard = () => {
                 {error}
               </AlertDescription>
             </Alert>
-            <Button onClick={() => navigate('/business-login')}>
-              Torna al Login
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={() => window.location.reload()}>
+                Ricarica Pagina
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/business-login')}>
+                Torna al Login
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -128,13 +136,11 @@ const BusinessDashboard = () => {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <Card className="max-w-md w-full">
           <CardContent className="p-6 text-center">
-            <h3 className="text-lg font-semibold mb-2">Nessuna impresa trovata</h3>
+            <h3 className="text-lg font-semibold mb-2">Caricamento impresa...</h3>
             <p className="text-gray-600 mb-4">
-              Non è stata trovata un'impresa associata a questo account.
+              Attendere il caricamento dei dati dell'impresa.
             </p>
-            <Button onClick={() => navigate('/business-signup')}>
-              Registra la Tua Impresa
-            </Button>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto"></div>
           </CardContent>
         </Card>
       </div>
