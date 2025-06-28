@@ -54,7 +54,18 @@ export const useBusinessAuth = () => {
         console.log('useBusinessAuth - Session:', session);
         
         if (session?.user) {
-          console.log('useBusinessAuth - User found, fetching business data');
+          console.log('useBusinessAuth - User found, checking if email is confirmed');
+          
+          // Check if user email is confirmed
+          if (!session.user.email_confirmed_at) {
+            console.log('useBusinessAuth - Email not confirmed yet');
+            setIsAuthenticated(false);
+            setBusiness(null);
+            setIsLoading(false);
+            return;
+          }
+          
+          console.log('useBusinessAuth - Email confirmed, fetching business data');
           
           // Fetch real business data from database
           const { data: businessData, error } = await supabase
@@ -65,9 +76,46 @@ export const useBusinessAuth = () => {
 
           if (error) {
             console.error('useBusinessAuth - Error fetching business:', error);
-            // User exists but no business registered yet
-            setIsAuthenticated(true);
-            setBusiness(null);
+            
+            // Check if business data exists in user metadata (from signup)
+            const userData = session.user.user_metadata;
+            if (userData && userData.business_name) {
+              console.log('useBusinessAuth - Creating business profile from metadata');
+              
+              // Create business profile from signup data
+              const { data: newBusiness, error: createError } = await supabase
+                .from('businesses')
+                .insert({
+                  user_id: session.user.id,
+                  business_name: userData.business_name,
+                  owner_name: userData.owner_name,
+                  email: session.user.email,
+                  phone: userData.phone,
+                  category: userData.category,
+                  region: userData.region,
+                  description: userData.description,
+                  website: userData.website,
+                  primary_brand: userData.primary_brand,
+                  secondary_brands: userData.secondary_brands || [],
+                  is_verified: false
+                })
+                .select()
+                .single();
+
+              if (createError) {
+                console.error('useBusinessAuth - Error creating business:', createError);
+                setIsAuthenticated(true);
+                setBusiness(null);
+              } else {
+                console.log('useBusinessAuth - Business created:', newBusiness);
+                setBusiness(newBusiness);
+                setIsAuthenticated(true);
+              }
+            } else {
+              // User exists but no business registered yet
+              setIsAuthenticated(true);
+              setBusiness(null);
+            }
           } else {
             console.log('useBusinessAuth - Business found:', businessData);
             setBusiness(businessData);
@@ -167,14 +215,32 @@ export const useBusinessAuth = () => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log('useBusinessAuth - Starting login process');
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('useBusinessAuth - Login error:', error);
+        throw error;
+      }
+
+      console.log('useBusinessAuth - Login successful:', data);
 
       if (data.user) {
+        // Check if email is confirmed
+        if (!data.user.email_confirmed_at) {
+          console.log('useBusinessAuth - Email not confirmed');
+          toast({
+            title: "Email non confermata",
+            description: "Controlla la tua email e clicca sul link di conferma prima di accedere.",
+            variant: "destructive",
+          });
+          await supabase.auth.signOut();
+          return { success: false, error: "Email non confermata" };
+        }
+
         // Fetch business data after login
         const { data: businessData, error: businessError } = await supabase
           .from('businesses')
@@ -184,9 +250,44 @@ export const useBusinessAuth = () => {
 
         if (businessError) {
           console.error('Error fetching business after login:', businessError);
-          // User exists but no business - redirect to complete registration
-          setIsAuthenticated(true);
-          setBusiness(null);
+          
+          // Check if we need to create business from metadata
+          const userData = data.user.user_metadata;
+          if (userData && userData.business_name) {
+            console.log('useBusinessAuth - Creating business from metadata after login');
+            
+            const { data: newBusiness, error: createError } = await supabase
+              .from('businesses')
+              .insert({
+                user_id: data.user.id,
+                business_name: userData.business_name,
+                owner_name: userData.owner_name,
+                email: data.user.email,
+                phone: userData.phone,
+                category: userData.category,
+                region: userData.region,
+                description: userData.description,
+                website: userData.website,
+                primary_brand: userData.primary_brand,
+                secondary_brands: userData.secondary_brands || [],
+                is_verified: false
+              })
+              .select()
+              .single();
+
+            if (createError) {
+              console.error('Error creating business after login:', createError);
+              setIsAuthenticated(true);
+              setBusiness(null);
+            } else {
+              setBusiness(newBusiness);
+              setIsAuthenticated(true);
+            }
+          } else {
+            // User exists but no business - redirect to complete registration
+            setIsAuthenticated(true);
+            setBusiness(null);
+          }
         } else {
           setBusiness(businessData);
           setIsAuthenticated(true);
@@ -213,6 +314,7 @@ export const useBusinessAuth = () => {
   };
 
   const logout = async () => {
+    console.log('useBusinessAuth - Logging out');
     await supabase.auth.signOut();
     setBusiness(null);
     setIsAuthenticated(false);
