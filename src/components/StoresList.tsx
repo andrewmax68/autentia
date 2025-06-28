@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ interface Store {
   address: string;
   city: string;
   province: string;
+  postal_code?: string;
   phone?: string;
   website?: string;
   services?: string[];
@@ -75,6 +77,7 @@ const StoresList = ({ businessId }: StoresListProps) => {
       address: store.address,
       city: store.city,
       province: store.province,
+      postal_code: store.postal_code || '',
       phone: store.phone || '',
       website: store.website || '',
       services: store.services || []
@@ -235,11 +238,26 @@ const StoresList = ({ businessId }: StoresListProps) => {
                 <TableRow key={store.id}>
                   <TableCell>
                     {editingStore === store.id ? (
-                      <Input
-                        value={editData.store_name || ''}
-                        onChange={(e) => setEditData(prev => ({ ...prev, store_name: e.target.value }))}
-                        className="w-full"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          value={editData.store_name || ''}
+                          onChange={(e) => setEditData(prev => ({ ...prev, store_name: e.target.value }))}
+                          placeholder="Nome negozio"
+                          className="w-full"
+                        />
+                        <Input
+                          value={editData.phone || ''}
+                          onChange={(e) => setEditData(prev => ({ ...prev, phone: e.target.value }))}
+                          placeholder="Telefono"
+                          className="w-full"
+                        />
+                        <Input
+                          value={editData.website || ''}
+                          onChange={(e) => setEditData(prev => ({ ...prev, website: e.target.value }))}
+                          placeholder="Sito web"
+                          className="w-full"
+                        />
+                      </div>
                     ) : (
                       <div>
                         <div className="font-medium">{store.store_name}</div>
@@ -265,6 +283,7 @@ const StoresList = ({ businessId }: StoresListProps) => {
                       <Input
                         value={editData.brand || ''}
                         onChange={(e) => setEditData(prev => ({ ...prev, brand: e.target.value }))}
+                        placeholder="Brand"
                       />
                     ) : (
                       store.brand
@@ -304,10 +323,19 @@ const StoresList = ({ businessId }: StoresListProps) => {
                           onChange={(e) => setEditData(prev => ({ ...prev, province: e.target.value }))}
                           placeholder="Provincia"
                         />
+                        <Input
+                          value={editData.postal_code || ''}
+                          onChange={(e) => setEditData(prev => ({ ...prev, postal_code: e.target.value }))}
+                          placeholder="CAP"
+                          maxLength={5}
+                        />
                       </div>
                     ) : (
                       <div className="text-sm">
                         {store.city}, {store.province}
+                        {store.postal_code && (
+                          <div className="text-xs text-gray-600">{store.postal_code}</div>
+                        )}
                       </div>
                     )}
                   </TableCell>
@@ -390,6 +418,58 @@ const StoresList = ({ businessId }: StoresListProps) => {
       </CardContent>
     </Card>
   );
+
+  const deleteStore = async (storeId: string, storeName: string) => {
+    if (!confirm(`Sei sicuro di voler eliminare "${storeName}"?`)) return;
+
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .delete()
+        .eq('id', storeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Successo",
+        description: "Punto vendita eliminato con successo",
+      });
+
+      await fetchStores();
+    } catch (error) {
+      console.error('Error deleting store:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile eliminare il punto vendita",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const toggleActive = async (storeId: string, currentStatus: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('stores')
+        .update({ is_active: !currentStatus })
+        .eq('id', storeId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Successo",
+        description: `Punto vendita ${!currentStatus ? 'attivato' : 'disattivato'} con successo`,
+      });
+
+      await fetchStores();
+    } catch (error) {
+      console.error('Error toggling store status:', error);
+      toast({
+        title: "Errore",
+        description: "Impossibile modificare lo stato del punto vendita",
+        variant: "destructive",
+      });
+    }
+  };
 };
 
 export default StoresList;
