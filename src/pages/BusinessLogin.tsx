@@ -1,25 +1,115 @@
 
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { MapPin, Mail, Lock, Building2, ArrowRight } from "lucide-react";
+import { MapPin, Mail, Lock, Building2, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useBusinessAuth } from "@/hooks/useBusinessAuth";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 const BusinessLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const { login, isLoading } = useBusinessAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    console.log('BusinessLogin - Attempting login with:', { email, passwordLength: password.length });
+    
     const result = await login(email, password);
     if (result.success) {
       navigate("/business-dashboard");
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!email) {
+      toast({
+        title: "Email richiesta",
+        description: "Inserisci la tua email per resettare la password",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsResettingPassword(true);
+    
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/business-login`,
+      });
+
+      if (error) {
+        console.error('Password reset error:', error);
+        toast({
+          title: "Errore reset password",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Email inviata!",
+          description: "Controlla la tua email per il link di reset della password",
+        });
+      }
+    } catch (error) {
+      console.error('Password reset error:', error);
+      toast({
+        title: "Errore",
+        description: "Si è verificato un errore durante il reset della password",
+        variant: "destructive",
+      });
+    } finally {
+      setIsResettingPassword(false);
+    }
+  };
+
+  const handleDebugAccount = async () => {
+    if (!email) {
+      toast({
+        title: "Email richiesta",
+        description: "Inserisci la tua email per verificare l'account",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Verifica se l'account esiste controllando la tabella businesses
+      const { data: businessData, error: businessError } = await supabase
+        .from('businesses')
+        .select('*')
+        .eq('email', email)
+        .single();
+
+      console.log('Debug - Business data:', businessData);
+      console.log('Debug - Business error:', businessError);
+
+      if (businessError && businessError.code !== 'PGRST116') {
+        console.error('Error checking business:', businessError);
+      }
+
+      toast({
+        title: "Debug info",
+        description: businessData 
+          ? `Account trovato: ${businessData.business_name} - Verificato: ${businessData.is_verified}`
+          : "Account non trovato nella tabella businesses",
+      });
+
+    } catch (error) {
+      console.error('Debug error:', error);
+      toast({
+        title: "Errore debug",
+        description: "Errore durante la verifica dell'account",
+        variant: "destructive",
+      });
     }
   };
 
@@ -103,9 +193,14 @@ const BusinessLogin = () => {
                   <input type="checkbox" className="rounded border-gray-300" />
                   <span>Ricordami</span>
                 </label>
-                <a href="#" className="text-green-600 hover:text-green-700 font-medium">
-                  Password dimenticata?
-                </a>
+                <button 
+                  type="button"
+                  onClick={handlePasswordReset}
+                  disabled={isResettingPassword}
+                  className="text-green-600 hover:text-green-700 font-medium"
+                >
+                  {isResettingPassword ? "Invio..." : "Password dimenticata?"}
+                </button>
               </div>
 
               <Button
@@ -123,6 +218,17 @@ const BusinessLogin = () => {
                 )}
               </Button>
             </form>
+
+            {/* Debug Button */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleDebugAccount}
+              className="w-full rounded-xl border-orange-200 text-orange-600 hover:bg-orange-50"
+            >
+              <AlertCircle className="mr-2 h-4 w-4" />
+              Verifica Account (Debug)
+            </Button>
 
             <div className="relative">
               <Separator className="my-6" />
