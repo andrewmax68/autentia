@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface StoreData {
   nomeNegozio: string;
@@ -30,7 +31,6 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -109,30 +109,23 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
   };
 
   const geocodeAddress = async (address: string, city: string, province: string): Promise<{lat: number, lng: number}> => {
-    const fullAddress = `${address}, ${city}, ${province}, Italia`;
-    const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(fullAddress)}&key=${apiKey}`;
-    
-    const response = await fetch(url);
-    const data = await response.json();
-    
-    if (data.status !== 'OK' || !data.results.length) {
-      throw new Error(`Geocoding fallito per: ${fullAddress}`);
+    const { data, error } = await supabase.functions.invoke('geocode-address', {
+      body: { address, city, province }
+    });
+
+    if (error) {
+      console.error('Geocoding error:', error);
+      throw new Error(`Geocoding failed for: ${address}, ${city}, ${province}`);
     }
-    
-    const location = data.results[0].geometry.location;
-    return { lat: location.lat, lng: location.lng };
+
+    if (data.error) {
+      throw new Error(data.error);
+    }
+
+    return { lat: data.lat, lng: data.lng };
   };
 
   const startGeocoding = async () => {
-    if (!apiKey.trim()) {
-      toast({
-        title: "API Key richiesta",
-        description: "Inserisci la tua Google Maps API Key per procedere",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsGeocoding(true);
     const updatedStores = [...stores];
     
@@ -150,8 +143,8 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
         
         setStores([...updatedStores]);
         
-        // Delay per rispettare rate limits
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Delay to respect rate limits
+        await new Promise(resolve => setTimeout(resolve, 500));
         
       } catch (error) {
         updatedStores[i].status = 'error';
@@ -237,7 +230,7 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
         </CardContent>
       </Card>
 
-      {/* Google Maps API Key */}
+      {/* Geocoding Section - Simplified */}
       {stores.length > 0 && (
         <Card className="bg-white/70 backdrop-blur-sm border-blue-100">
           <CardHeader>
@@ -247,26 +240,14 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700">
-                Google Maps API Key (per geocodifica)
-              </label>
-              <Input
-                type="password"
-                placeholder="Inserisci la tua Google Maps API Key"
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                className="border-blue-200"
-              />
-              <p className="text-xs text-gray-600">
-                Necessaria per convertire automaticamente gli indirizzi in coordinate GPS
-              </p>
-            </div>
+            <p className="text-sm text-gray-600">
+              Converti automaticamente gli indirizzi in coordinate GPS per visualizzare i punti vendita sulla mappa.
+            </p>
             
             <div className="flex items-center space-x-4">
               <Button
                 onClick={startGeocoding}
-                disabled={isGeocoding || !apiKey.trim()}
+                disabled={isGeocoding}
                 className="bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700"
               >
                 {isGeocoding ? (
@@ -277,7 +258,7 @@ const StoreUploader = ({ onStoresUploaded }: StoreUploaderProps) => {
                 ) : (
                   <>
                     <MapPin className="h-4 w-4 mr-2" />
-                    Avvia Geocodifica
+                    Avvia Geocodifica ({stores.length} indirizzi)
                   </>
                 )}
               </Button>
