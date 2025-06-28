@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          last_login: string | null
+          name: string
+          password_hash: string
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          name: string
+          password_hash: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          last_login?: string | null
+          name?: string
+          password_hash?: string
+        }
+        Relationships: []
+      }
       businesses: {
         Row: {
           business_name: string
@@ -18,6 +48,7 @@ export type Database = {
           email: string
           id: string
           is_verified: boolean | null
+          last_activity: string | null
           logo_url: string | null
           owner_name: string
           phone: string | null
@@ -36,6 +67,7 @@ export type Database = {
           email: string
           id?: string
           is_verified?: boolean | null
+          last_activity?: string | null
           logo_url?: string | null
           owner_name: string
           phone?: string | null
@@ -54,6 +86,7 @@ export type Database = {
           email?: string
           id?: string
           is_verified?: boolean | null
+          last_activity?: string | null
           logo_url?: string | null
           owner_name?: string
           phone?: string | null
