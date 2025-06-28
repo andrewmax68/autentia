@@ -55,6 +55,7 @@ const BrandSearch = () => {
     try {
       console.log('Searching for brand:', term);
       
+      // Search in both primary and secondary brands
       const { data, error } = await supabase
         .from('public_stores')
         .select('*')
@@ -68,6 +69,18 @@ const BrandSearch = () => {
         setBrandLogo(null);
       } else {
         console.log('Found stores:', data);
+        console.log('Search results count:', data?.length || 0);
+        
+        // Log each store's brand information
+        data?.forEach((store, index) => {
+          console.log(`Store ${index + 1}:`, {
+            store_name: store.store_name,
+            brand: store.brand,
+            business_name: store.business_name,
+            logo_url: store.logo_url
+          });
+        });
+        
         setStores(data || []);
         
         // Get the exact brand name and logo from the first store found
@@ -130,7 +143,7 @@ const BrandSearch = () => {
             <form onSubmit={handleSubmit} className="flex-1 flex gap-2">
               <Input
                 type="text"
-                placeholder="Cerca brand o azienda (es. Terra delle Marche, Ceramiche Blu)"
+                placeholder="Cerca brand o azienda (es. Terra delle Marche, Monte Monaco)"
                 value={brandSearch}
                 onChange={(e) => setBrandSearch(e.target.value)}
                 className="flex-1"
@@ -174,8 +187,8 @@ const BrandSearch = () => {
             <Card className="max-w-md mx-auto mt-8">
               <CardContent className="p-6 text-center">
                 <h3 className="text-lg font-semibold mb-2">Brand non trovato</h3>
-                <p className="text-gray-600">
-                  "{brandSearch}" non è presente nel nostro database.
+                <p className="text-gray-600 mb-4">
+                  "{brandSearch}" non è presente nel nostro database. Prova con "Monte Monaco" o "Terra delle Marche".
                 </p>
                 <Button className="mt-4" onClick={() => window.location.href = '/'}>
                   Nuova Ricerca
@@ -206,7 +219,7 @@ const BrandSearch = () => {
                       parseFloat(store.longitude.toString())
                     ]}
                   >
-                    <Popup className="custom-popup">
+                    <Popup>
                       <div className="p-3 min-w-[250px]">
                         <div className="flex items-center gap-3 mb-3">
                           {store.logo_url && (
@@ -264,18 +277,6 @@ const BrandSearch = () => {
           </div>
         )}
       </div>
-      
-      <style>
-        {`
-        .custom-popup .leaflet-popup-content {
-          margin: 0;
-        }
-        .custom-popup .leaflet-popup-content-wrapper {
-          border-radius: 8px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        }
-        `}
-      </style>
     </div>
   );
 };

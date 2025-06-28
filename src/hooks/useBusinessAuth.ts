@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { authService } from '@/services/authService';
@@ -93,6 +92,8 @@ export const useBusinessAuth = () => {
 
       if (businessData) {
         console.log('useBusinessAuth - Business data loaded:', businessData.business_name);
+        console.log('useBusinessAuth - Primary brand:', businessData.primary_brand);
+        console.log('useBusinessAuth - Secondary brands:', businessData.secondary_brands);
         setBusiness(businessData);
       } else {
         console.log('useBusinessAuth - No business data found');
