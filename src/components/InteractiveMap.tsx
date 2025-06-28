@@ -35,11 +35,22 @@ const InteractiveMap = ({ stores, className = "" }: InteractiveMapProps) => {
   const mapInstance = useRef<L.Map | null>(null);
 
   useEffect(() => {
-    if (!mapRef.current || stores.length === 0) return;
+    console.log('InteractiveMap - Received stores:', stores);
+    
+    if (!mapRef.current) {
+      console.log('InteractiveMap - No map ref');
+      return;
+    }
 
-    // Initialize map
+    if (stores.length === 0) {
+      console.log('InteractiveMap - No stores provided');
+      return;
+    }
+
+    // Initialize map only once
     if (!mapInstance.current) {
-      mapInstance.current = L.map(mapRef.current).setView([42.0, 12.0], 6);
+      console.log('InteractiveMap - Initializing map');
+      mapInstance.current = L.map(mapRef.current).setView([43.6158, 13.5189], 8);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap contributors'
@@ -55,38 +66,72 @@ const InteractiveMap = ({ stores, className = "" }: InteractiveMapProps) => {
 
     // Add markers for stores
     const bounds = L.latLngBounds([]);
+    let markersAdded = 0;
+
     stores.forEach((store) => {
+      console.log('InteractiveMap - Processing store:', store.store_name, 'Lat:', store.latitude, 'Lng:', store.longitude);
+      
       if (store.latitude && store.longitude) {
+        const popupContent = `
+          <div class="p-3 min-w-[200px]">
+            <h3 class="font-bold text-lg text-gray-900 mb-1">${store.store_name}</h3>
+            <p class="text-sm text-green-600 font-medium mb-2">${store.brand}</p>
+            <p class="text-sm text-gray-700 mb-1">${store.address}</p>
+            <p class="text-sm text-gray-700 mb-2">${store.city}, ${store.province}</p>
+            ${store.phone ? `<p class="text-sm text-blue-600 mb-1">📞 <a href="tel:${store.phone}">${store.phone}</a></p>` : ''}
+            ${store.website ? `<p class="text-sm text-blue-600 mb-1">🌐 <a href="${store.website}" target="_blank" class="underline">Sito Web</a></p>` : ''}
+            ${store.services && store.services.length > 0 ? `<p class="text-xs text-gray-500 mt-2"><strong>Servizi:</strong> ${store.services.join(', ')}</p>` : ''}
+          </div>
+        `;
+
         const marker = L.marker([store.latitude, store.longitude])
           .addTo(mapInstance.current!)
-          .bindPopup(`
-            <div class="p-2">
-              <h3 class="font-bold text-lg">${store.store_name}</h3>
-              <p class="text-sm text-gray-600">${store.brand}</p>
-              <p class="text-sm mt-1">${store.address}</p>
-              <p class="text-sm">${store.city}, ${store.province}</p>
-              ${store.phone ? `<p class="text-sm mt-1">📞 ${store.phone}</p>` : ''}
-              ${store.website ? `<p class="text-sm"><a href="${store.website}" target="_blank" class="text-blue-600">🌐 Sito Web</a></p>` : ''}
-              ${store.services && store.services.length > 0 ? `<p class="text-xs mt-1 text-gray-500">Servizi: ${store.services.join(', ')}</p>` : ''}
-            </div>
-          `);
+          .bindPopup(popupContent, { 
+            maxWidth: 300,
+            className: 'custom-popup'
+          });
         
         bounds.extend([store.latitude, store.longitude]);
+        markersAdded++;
+        console.log('InteractiveMap - Added marker for:', store.store_name);
+      } else {
+        console.log('InteractiveMap - Store missing coordinates:', store.store_name);
       }
     });
 
+    console.log('InteractiveMap - Total markers added:', markersAdded);
+
     // Fit map to show all markers
-    if (bounds.isValid()) {
-      mapInstance.current.fitBounds(bounds, { padding: [20, 20] });
+    if (bounds.isValid() && markersAdded > 0) {
+      mapInstance.current.fitBounds(bounds, { 
+        padding: [20, 20],
+        maxZoom: 12
+      });
+      console.log('InteractiveMap - Fitted bounds to markers');
     }
 
+    // Cleanup function
+    return () => {
+      // Don't remove the map instance in cleanup, just clear markers
+      if (mapInstance.current) {
+        mapInstance.current.eachLayer((layer) => {
+          if (layer instanceof L.Marker) {
+            mapInstance.current?.removeLayer(layer);
+          }
+        });
+      }
+    };
+  }, [stores]);
+
+  // Cleanup on unmount
+  useEffect(() => {
     return () => {
       if (mapInstance.current) {
         mapInstance.current.remove();
         mapInstance.current = null;
       }
     };
-  }, [stores]);
+  }, []);
 
   if (stores.length === 0) {
     return (
@@ -105,6 +150,14 @@ const InteractiveMap = ({ stores, className = "" }: InteractiveMapProps) => {
       <div className="absolute top-2 right-2 bg-white px-2 py-1 rounded shadow-sm">
         <span className="text-xs text-gray-600">{stores.length} punti vendita</span>
       </div>
+      <style jsx>{`
+        .custom-popup .leaflet-popup-content {
+          margin: 0;
+        }
+        .custom-popup .leaflet-popup-content-wrapper {
+          border-radius: 8px;
+        }
+      `}</style>
     </div>
   );
 };
