@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Plus, MapPin, Building, Phone, Globe, Save, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,11 +15,11 @@ interface StoreFormData {
   province: string;
   phone?: string;
   website?: string;
-  services?: string;
+  services?: string[];
 }
 
 interface ManualStoreFormProps {
-  onStoreAdded?: (store: StoreFormData & { latitude?: number; longitude?: number; services?: string[] }) => void;
+  onStoreAdded?: (store: StoreFormData & { latitude?: number; longitude?: number }) => void;
 }
 
 const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
@@ -34,8 +33,9 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
     province: '',
     phone: '',
     website: '',
-    services: ''
+    services: []
   });
+  const [servicesInput, setServicesInput] = useState('');
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,7 +65,7 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
         ...formData,
         latitude,
         longitude,
-        services: formData.services ? formData.services.split(',').map(s => s.trim()) : []
+        services: servicesInput ? servicesInput.split(',').map(s => s.trim()).filter(s => s) : []
       };
 
       if (onStoreAdded) {
@@ -86,8 +86,9 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
         province: '',
         phone: '',
         website: '',
-        services: ''
+        services: []
       });
+      setServicesInput('');
       setIsOpen(false);
 
     } catch (error) {
@@ -102,7 +103,7 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
     }
   };
 
-  const handleInputChange = (field: keyof StoreFormData, value: string) => {
+  const handleInputChange = (field: keyof Omit<StoreFormData, 'services'>, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -228,8 +229,8 @@ const ManualStoreForm = ({ onStoreAdded }: ManualStoreFormProps) => {
             <Label htmlFor="services">Servizi (separati da virgola)</Label>
             <Input
               id="services"
-              value={formData.services}
-              onChange={(e) => handleInputChange('services', e.target.value)}
+              value={servicesInput}
+              onChange={(e) => setServicesInput(e.target.value)}
               placeholder="es. Alimentari, Bevande, Prodotti locali"
             />
           </div>

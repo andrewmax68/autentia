@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,13 +41,19 @@ const StoresList = ({ businessId }: StoresListProps) => {
 
   const fetchStores = async () => {
     try {
+      console.log('Fetching stores for business ID:', businessId);
       const { data, error } = await supabase
         .from('stores')
         .select('*')
         .eq('business_id', businessId)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('Stores fetched:', data);
       setStores(data || []);
     } catch (error) {
       console.error('Error fetching stores:', error);
@@ -85,9 +90,11 @@ const StoresList = ({ businessId }: StoresListProps) => {
     try {
       const updateData = {
         ...editData,
-        services: typeof editData.services === 'string' 
+        services: Array.isArray(editData.services) 
+          ? editData.services
+          : typeof editData.services === 'string' 
           ? editData.services.split(',').map(s => s.trim()).filter(s => s)
-          : editData.services
+          : []
       };
 
       const { error } = await supabase
@@ -190,6 +197,14 @@ const StoresList = ({ businessId }: StoresListProps) => {
           <p className="text-gray-600">
             Non hai ancora aggiunto nessun punto vendita. Usa le altre sezioni per aggiungerne.
           </p>
+          <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <p className="text-sm text-yellow-800">
+              <strong>Debug Info:</strong> Business ID utilizzato: {businessId}
+            </p>
+            <p className="text-sm text-yellow-700 mt-1">
+              Se hai inserito dei punti vendita ma non li vedi qui, potrebbe esserci un problema con l'ID dell'azienda.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -301,8 +316,8 @@ const StoresList = ({ businessId }: StoresListProps) => {
                   <TableCell>
                     {editingStore === store.id ? (
                       <Input
-                        value={Array.isArray(editData.services) ? editData.services.join(', ') : (editData.services || '')}
-                        onChange={(e) => setEditData(prev => ({ ...prev, services: e.target.value }))}
+                        value={Array.isArray(editData.services) ? editData.services.join(', ') : ''}
+                        onChange={(e) => setEditData(prev => ({ ...prev, services: e.target.value.split(',').map(s => s.trim()) }))}
                         placeholder="Servizi separati da virgola"
                       />
                     ) : (
