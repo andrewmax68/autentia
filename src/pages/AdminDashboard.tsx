@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { adminService, AdminUser } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut, Building2, Store, Users, Download } from 'lucide-react';
+import { LogOut, Building2, Store, Users, Download, Home } from 'lucide-react';
 
 interface DashboardStats {
   totalBrands: number;
@@ -65,6 +64,10 @@ const AdminDashboard = () => {
     navigate('/admin/login');
   };
 
+  const goToHome = () => {
+    navigate('/');
+  };
+
   const toggleBusinessStatus = async (businessId: string, currentStatus: boolean) => {
     try {
       await adminService.toggleBusinessStatus(businessId, !currentStatus);
@@ -111,14 +114,24 @@ const AdminDashboard = () => {
                 Benvenuto, {currentAdmin?.name}
               </p>
             </div>
-            <Button
-              onClick={handleLogout}
-              variant="outline"
-              className="flex items-center gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Esci
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={goToHome}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Home className="h-4 w-4" />
+                Torna alla Home
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Esci
+              </Button>
+            </div>
           </div>
         </div>
       </div>

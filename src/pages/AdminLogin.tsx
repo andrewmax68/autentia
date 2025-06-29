@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { adminService } from '@/services/adminService';
 import { useToast } from '@/hooks/use-toast';
+import { Home } from 'lucide-react';
 
 const AdminLogin = () => {
   const [email, setEmail] = useState('');
@@ -37,13 +38,31 @@ const AdminLogin = () => {
     }
   };
 
+  const goToHome = () => {
+    navigate('/');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-green-700">
-            Dove Si Vende?
-          </CardTitle>
+          <div className="flex justify-between items-center mb-2">
+            <div className="flex-1" />
+            <h1 className="text-2xl font-bold text-green-700">
+              Dove Si Vende?
+            </h1>
+            <div className="flex-1 flex justify-end">
+              <Button
+                onClick={goToHome}
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-gray-900"
+              >
+                <Home className="h-4 w-4 mr-1" />
+                Home
+              </Button>
+            </div>
+          </div>
           <CardDescription>
             Area Amministrativa
           </CardDescription>
